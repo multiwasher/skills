@@ -1,0 +1,2485 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TMS Pro - Gestão Estratégica de Formação | ISO 9001 & Art. 131.º</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#2563eb',
+                            600: '#1d4ed8',
+                            700: '#1e40af',
+                            800: '#1e3a8a',
+                            900: '#132a63',
+                        },
+                        iso: {
+                            success: '#059669',
+                            warning: '#d97706',
+                            danger: '#dc2626',
+                            info: '#0284c7'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js for Insights & Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- PapaParse for CSV parsing from Google Sheets -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .tab-btn.active {
+            border-bottom: 3px solid #2563eb;
+            color: #2563eb;
+            font-weight: 600;
+            background-color: rgba(37, 99, 235, 0.04);
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: #fff; color: #000; }
+            .shadow-sm, .shadow-md, .shadow-lg { box-shadow: none !important; }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-30 no-print">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Brand & Logo -->
+                <div class="flex items-center gap-3">
+                    <img src="https://res.cloudinary.com/dlkkjtgvy/image/upload/v1780388780/somengil_logo_white_ofh0xi.png" alt="Somengil" class="h-10 w-auto">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-emerald-400 border border-emerald-500/30 font-medium">ISO 9001:2015 & Art. 131.º CT</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Sistema Integrado de Gestão Contínua de Formação</p>
+                    </div>
+                </div>
+
+                <!-- Global Controls: Year selector & Sheet Status -->
+                <div class="flex items-center gap-3">
+                    <!-- Year Picker (seleção múltipla) -->
+                    <div class="relative">
+                        <button type="button" onclick="toggleYearFilterMenu(event)" id="yearFilterBtn" class="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition">
+                            <i class="fa-regular fa-calendar text-slate-400"></i>
+                            <span id="yearFilterLabel">2026</span>
+                            <i class="fa-solid fa-chevron-down text-[9px] text-slate-400"></i>
+                        </button>
+                        <div id="yearFilterMenu" class="hidden absolute left-0 sm:right-0 sm:left-auto mt-1.5 w-48 bg-white border border-slate-200 rounded-xl shadow-2xl z-50 p-2 text-slate-700">
+                            <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-xs font-bold border-b border-slate-100 mb-1">
+                                <input type="checkbox" id="yearFilterAll" onchange="toggleYearAll(this.checked)" class="rounded accent-brand-600">
+                                Todos os Anos
+                            </label>
+                            <div id="yearFilterList" class="max-h-52 overflow-y-auto space-y-0.5"></div>
+                            <p class="text-[10px] text-slate-400 mt-1.5 px-2 leading-snug">Seleciona vários anos para comparar.</p>
+                        </div>
+                    </div>
+
+                    <!-- Google Sheets Indicator -->
+                    <button onclick="switchTab('sheet-sync')" id="sheetsStatusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 transition">
+                        <i class="fa-solid fa-table text-emerald-400"></i>
+                        <span id="sheetStatusText" class="hidden sm:inline font-medium">Google Sheet: Ativo</span>
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                    </button>
+
+                    <!-- Forçar Atualização do Sheet -->
+                    <button onclick="forcarAtualizacaoSheet()" id="btnRefreshSheet" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed" title="Forçar atualização dos dados do Google Sheet">
+                        <i class="fa-solid fa-rotate" id="iconRefreshSheet"></i>
+                    </button>
+
+                    <!-- Pasta de Documentos de Formação (Google Drive) -->
+                    <a href="https://drive.google.com/drive/folders/1WZQ3UUTB4Rx-nhD37maUbJjy7JSlbDqO?usp=drive_link" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Abrir pasta de documentos de formação (Google Drive)">
+                        <i class="fa-brands fa-google-drive"></i>
+                    </a>
+
+                    <!-- Export Quick Button -->
+                    <button onclick="window.print()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Imprimir / Exportar PDF">
+                        <i class="fa-solid fa-print"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="bg-slate-900 border-t border-slate-800/80 px-4 sm:px-6 lg:px-8">
+            <div class="max-w-7xl mx-auto flex space-x-1 sm:space-x-4 overflow-x-auto text-sm">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn active px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie"></i> Insights & Dashboard
+                </button>
+                <button onclick="switchTab('colaboradores')" id="tab-colaboradores" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-users"></i> Colaboradores & Art. 131.º
+                </button>
+                <button onclick="switchTab('formacoes')" id="tab-formacoes" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-book-open"></i> Plano de Formação
+                </button>
+                <button onclick="switchTab('iso-audit')" id="tab-iso-audit" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-clipboard-check"></i> Eficácia & Auditoria ISO 9001
+                </button>
+                <button onclick="switchTab('sheet-sync')" id="tab-sheet-sync" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-link"></i> Conexão Google Sheet
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+        <!-- Notification Toast Container -->
+        <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 no-print"></div>
+
+        <!-- TAB 1: DASHBOARD & INSIGHTS -->
+        <section id="sec-dashboard" class="space-y-6">
+            <!-- Executive Summary Header -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">Painel de Controlo da Formação & Conformidade</h1>
+                    <p class="text-sm text-slate-500">Acompanhamento contínuo de KPIs legais (Código do Trabalho) e de Gestão da Qualidade (ISO 9001:2015 §7.2).</p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="openFormacaoModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-sm font-semibold shadow-md shadow-brand-500/20 flex items-center gap-2 transition">
+                        <i class="fa-solid fa-plus"></i> Nova Formação
+                    </button>
+                    <button onclick="openColaboradorModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-sm font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-user-plus"></i> Novo Colaborador
+                    </button>
+                </div>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1: Horas Totais -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Total Horas Ministradas</p>
+                            <h3 id="kpiTotalHoras" class="text-3xl font-bold text-slate-900 mt-1">0h</h3>
+                        </div>
+                        <div class="p-3 bg-blue-50 text-brand-600 rounded-xl">
+                            <i class="fa-solid fa-clock text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                        <span>Meta Anual: <span id="kpiMetaHoras" class="font-semibold text-slate-700">0h</span></span>
+                        <span id="kpiHorasPercent" class="font-bold text-emerald-600">0%</span>
+                    </div>
+                </div>
+
+                <!-- Card 2: Concretização Artigo 131.º CT -->
+                <div id="kpiLegalCard" class="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Cumprimento Art. 131.º CT</p>
+                            <h3 id="kpiConcretizacaoLegal" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
+                            <div id="badgeConformidadeLegal" class="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-500">
+                                <i id="iconConformidadeLegal" class="fa-solid fa-spinner fa-spin"></i>
+                                <span id="textoConformidadeLegal">A calcular…</span>
+                            </div>
+                            <div id="kpiLegalBreakdown" class="hidden mt-2 space-y-1"></div>
+                        </div>
+                        <div id="kpiLegalIconWrap" class="p-3 bg-emerald-50 text-emerald-600 rounded-xl shrink-0">
+                            <i class="fa-solid fa-scale-balanced text-lg"></i>
+                        </div>
+                    </div>
+                    <div id="kpiLegalCountRow" class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                        <span>Colaboradores com &ge;40h:</span>
+                        <span class="flex items-center gap-2">
+                            <span id="kpiLegalCount" class="font-semibold text-slate-700">0 / 0</span>
+                            <button onclick="switchTab('colaboradores')" id="kpiLegalVerBtn" class="hidden text-[11px] text-brand-600 hover:text-brand-800 font-semibold underline decoration-dotted">Ver &rarr;</button>
+                        </span>
+                    </div>
+                    <p class="mt-1.5 text-[10px] text-slate-400 leading-snug">Mínimo legal: <span id="kpiLimiteLegalTexto" class="font-semibold">10%</span> dos colaboradores/ano (Art. 131.º CT). As horas não dadas revertem para crédito do trabalhador — não é exigido 100% a 40h.</p>
+                </div>
+
+                <!-- Card 3: Avaliação Eficácia ISO 9001 -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Eficácia Avaliada (ISO)</p>
+                            <h3 id="kpiEficaciaIso" class="text-3xl font-bold text-slate-900 mt-1">0%</h3>
+                        </div>
+                        <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                            <i class="fa-solid fa-award text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                        <span>Ações Avaliadas:</span>
+                        <span id="kpiEficaciaCount" class="font-semibold text-slate-700">0 / 0</span>
+                    </div>
+                </div>
+
+                <!-- Card 4: Investimento / Custo Médio -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-slate-300 transition">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Investimento Total</p>
+                            <h3 id="kpiInvestimentoTotal" class="text-3xl font-bold text-slate-900 mt-1">0 €</h3>
+                        </div>
+                        <div class="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                            <i class="fa-solid fa-euro-sign text-lg"></i>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                        <span>Custo / Colaborador:</span>
+                        <span id="kpiCustoPorColaborador" class="font-semibold text-slate-700">0 €</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 1: Tendência Mensal & Distribuição por Área -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Trend Chart (2 Cols) -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-brand-600"></i> Tendência Mensal de Horas de Formação (Planeado vs. Executado)
+                        </h2>
+                        <span class="text-xs text-slate-400">Distribuição ao longo do ano</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="chartTendenciaMensal"></canvas>
+                    </div>
+                </div>
+
+                <!-- Area Chart (1 Col) -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-pie-chart text-brand-600"></i> Horas por Área
+                        </h2>
+                    </div>
+                    <div class="h-64 relative flex items-center justify-center">
+                        <canvas id="chartAreaFormacao"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row 2: Status por Departamento & Alertas Audit -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Dept Bar Chart -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                            <i class="fa-solid fa-building text-brand-600"></i> Média de Horas por Colaborador por Departamento
+                        </h2>
+                        <span class="text-xs font-semibold px-2 py-0.5 bg-amber-100 text-amber-800 rounded">Linha Vermelha = 40h Min. Legal</span>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="chartDepartamentos"></canvas>
+                    </div>
+                </div>
+
+                <!-- ISO 9001 Audit Readiness & Quick Alerts -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 mb-3">
+                            <i class="fa-solid fa-shield-halved text-emerald-600"></i> Destaques para Auditoria Externa
+                        </h2>
+                        <p class="text-xs text-slate-500 mb-4">Pontos de verificação rápida para o Auditor ISO 9001 / ACT.</p>
+
+                        <div class="space-y-3" id="auditAlertsContainer">
+                            <!-- Injected by JS -->
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100">
+                        <button onclick="switchTab('iso-audit')" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-file-contract"></i> Ver Checklist Completo de Auditoria
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: COLABORADORES & ARTIGO 131.º -->
+        <section id="sec-colaboradores" class="hidden space-y-6">
+            <!-- Header Bar -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">Gestão de Colaboradores & Créditos de Formação</h1>
+                    <p class="text-sm text-slate-500">Conformidade com o <strong>Artigo 131.º do Código do Trabalho</strong> (Garantia mínima de 40 horas anuais por trabalhador).</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input type="text" id="searchColaboradorInput" onkeyup="renderColaboradoresTable()" placeholder="Pesquisar por nome, NIF ou departamento..." class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs w-64 focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    <button onclick="openColaboradorModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-user-plus"></i> Adicionar Colaborador
+                    </button>
+                </div>
+            </div>
+
+            <!-- Colaboradores Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Mec / Colaborador</th>
+                                <th class="py-3 px-4">Departamento / Cargo</th>
+                                <th class="py-3 px-4 text-center">Ano Ativo</th>
+                                <th class="py-3 px-4 text-center">Horas Realizadas</th>
+                                <th class="py-3 px-4 text-center">Horas Restantes (40h)</th>
+                                <th class="py-3 px-4 text-center">Estado Legal Art. 131.º</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="colaboradoresTableBody" class="divide-y divide-slate-100 text-xs">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: PLANO DE FORMAÇÃO -->
+        <section id="sec-formacoes" class="hidden space-y-6">
+            <!-- Header Bar & Filters -->
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">Plano & Registos de Formação</h1>
+                    <p class="text-sm text-slate-500">Registo detalhado de ações internas, externas, entidades formadoras (DGERT) e evidências.</p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <select id="filterEstadoFormacao" onchange="renderFormacoesTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="ALL">Todos os Estados</option>
+                        <option value="Concluída">Concluídas</option>
+                        <option value="Em Curso">Em Curso</option>
+                        <option value="Planeada">Planeadas</option>
+                        <option value="Cancelada">Canceladas</option>
+                    </select>
+                    <select id="filterAreaFormacao" onchange="renderFormacoesTable()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                        <option value="ALL">Todas as Áreas</option>
+                        <option value="Qualidade & ISO">Qualidade & ISO</option>
+                        <option value="Segurança no Trabalho">Segurança no Trabalho</option>
+                        <option value="Tecnologia & IT">Tecnologia & IT</option>
+                        <option value="Liderança & Soft Skills">Liderança & Soft Skills</option>
+                        <option value="Técnica & Operações">Técnica & Operações</option>
+                        <option value="Línguas">Línguas</option>
+                    </select>
+                    <button onclick="openFormacaoModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-plus"></i> Registar Formação
+                    </button>
+                </div>
+            </div>
+
+            <!-- Formações Table Card -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Código / Formação</th>
+                                <th class="py-3 px-4">Área / Entidade</th>
+                                <th class="py-3 px-4 text-center">Data / Carga H.</th>
+                                <th class="py-3 px-4 text-center">Participantes</th>
+                                <th class="py-3 px-4 text-center">Estado</th>
+                                <th class="py-3 px-4 text-center">ISO Eficácia</th>
+                                <th class="py-3 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="formacoesTableBody" class="divide-y divide-slate-100 text-xs">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: EFICÁCIA & AUDITORIA ISO 9001 -->
+        <section id="sec-iso-audit" class="hidden space-y-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold">Cláusula ISO 9001:2015 § 7.2</span>
+                            <h1 class="text-xl font-bold text-slate-800">Avaliação da Eficácia & Evidências de Auditoria</h1>
+                        </div>
+                        <p class="text-sm text-slate-500 mt-1">Garantia do cumprimento do ciclo da formação: Levantamento de Necessidades &rarr; Execução &rarr; Avaliação do Impacto na Função.</p>
+                    </div>
+                    <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition">
+                        <i class="fa-solid fa-file-pdf"></i> Imprimir Dossiê de Auditoria
+                    </button>
+                </div>
+            </div>
+
+            <!-- ISO Checklist and Evaluation Table -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Checklist Standard -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-list-check text-brand-600"></i> Requisitos de Auditoria Externa
+                    </h2>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">7.2 a) Determinar Competências</span>
+                                <span class="text-slate-500">Matriz de funções e levantamento anual de necessidades efetuado.</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">7.2 b) Assegurar Qualificação</span>
+                                <span class="text-slate-500">Registo de certificados DGERT e registo de formadores.</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">7.2 c) Avaliar Eficácia das Ações</span>
+                                <span class="text-slate-500">Acompanhamento pós-formação (30-90 dias) pela chefia direta.</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+                            <i class="fa-solid fa-circle-check text-emerald-600 mt-0.5"></i>
+                            <div>
+                                <span class="font-bold text-slate-800 block">7.2 d) Retenção de Informação Documentada</span>
+                                <span class="text-slate-500">Listas de presenças, certificados e registos individuais preservados.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formações a aguardar Avaliação de Eficácia -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <h2 class="text-base font-bold text-slate-800 flex items-center gap-2 border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-star text-amber-500"></i> Avaliações de Eficácia Pendentes e Concluídas
+                    </h2>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase">
+                                    <th class="py-2.5 px-3">Ação de Formação</th>
+                                    <th class="py-2.5 px-3">Data</th>
+                                    <th class="py-2.5 px-3 text-center">Estado Eficácia</th>
+                                    <th class="py-2.5 px-3 text-center">Nota / Impacto</th>
+                                    <th class="py-2.5 px-3 text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="isoEficaciaTableBody" class="divide-y divide-slate-100 text-xs">
+                                <!-- Injected dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: GOOGLE SHEETS SYNC & CONFIG -->
+        <section id="sec-sheet-sync" class="hidden space-y-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h1 class="text-xl font-bold text-slate-800">Conectividade & Sincronização com Google Sheets</h1>
+                <p class="text-sm text-slate-500 mt-1">Ligue a sua folha de cálculo existente (via URL pública CSV ou Google Web App) para ler, atualizar ou importar dados em tempo real.</p>
+            </div>
+
+            <!-- Limite Legal Art. 131.º CT -->
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                        <i class="fa-solid fa-scale-balanced text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-slate-800">Limite Legal — Art. 131.º CT</h2>
+                        <p class="text-xs text-slate-500">A lei exige que a empresa assegure formação contínua anual a pelo menos esta % dos colaboradores (não é preciso 100% a 40h — as horas não dadas revertem para crédito de 3 anos do trabalhador). O valor por defeito é 10%; ajuste se a sua convenção coletiva estipular outro.</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 max-w-xs">
+                    <input type="number" id="limiteLegalInput" min="1" max="100" step="0.5" value="10" class="w-24 p-2.5 text-sm bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold text-slate-700">
+                    <span class="text-sm text-slate-500">%</span>
+                    <button onclick="guardarLimiteLegal()" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs transition">Guardar</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Option A: Import CSV / Public URL -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                            <i class="fa-solid fa-file-csv text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-slate-800">1. Carregar via Link Publicado do Google Sheets</h2>
+                            <p class="text-xs text-slate-500">Funciona com qualquer link publicado na Web (pubhtml ou csv).</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <label class="block text-xs font-semibold text-slate-700">URL do Google Sheets / CSV:</label>
+                        <input type="text" id="sheetUrlInput" value="https://docs.google.com/spreadsheets/d/e/2PACX-1vS4bx64i3q4zRWyxkLGujzt1YbbaRX2Kce_Ch-sm4ZeTq67l4SeEACRJKr0dhWRfS8CpBxMzTqfGstO/pubhtml?gid=514070388&single=true" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono text-slate-700">
+                        
+                        <div class="flex items-center gap-2">
+                            <button onclick="fetchGoogleSheetData()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-sm">
+                                <i class="fa-solid fa-rotate"></i> Sincronizar / Carregar Agora
+                            </button>
+                            <button onclick="resetToSampleData()" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl text-xs transition">
+                                Restaurar Demo
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1">
+                        <p class="font-semibold text-slate-700"><i class="fa-solid fa-circle-info text-brand-600 mr-1"></i> Como publicar no Google Sheets:</p>
+                        <p>1. No Google Sheets, vá a <strong>Ficheiro &rarr; Partilhar &rarr; Publicar na Web</strong>.</p>
+                        <p>2. Escolha a página e selecione formato <em>Valores Separados por Vírgulas (.csv)</em> ou <em>Página Web</em>.</p>
+                        <p>3. Cole o link gerado acima.</p>
+                    </div>
+                </div>
+
+                <!-- Option B: Google Apps Script 2-Way Live Integration -->
+                <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-brand-50 text-brand-600 rounded-xl">
+                            <i class="fa-solid fa-code text-xl"></i>
+                        </div>
+                        <div>
+                            <h2 class="font-bold text-slate-800">2. Sincronização Bidirecional (Google Apps Script)</h2>
+                            <p class="text-xs text-slate-500">Permite salvar alterações diretamente na sua folha do Google Sheets.</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3 pt-2">
+                        <label class="block text-xs font-semibold text-slate-700">Web App Endpoint URL (Opcional):</label>
+                        <input type="text" id="webAppUrlInput" placeholder="https://script.google.com/macros/s/AKfycbx.../exec" class="w-full p-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 font-mono text-slate-700">
+                        
+                        <button onclick="saveAppsScriptUrl()" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold rounded-xl text-xs transition flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Guardar Configuração WebApp
+                        </button>
+                    </div>
+
+                    <div class="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <button onclick="toggleScriptCodeModal()" class="text-brand-600 font-bold hover:underline flex items-center gap-1">
+                            <i class="fa-solid fa-brackets-curly"></i> Ver código Google Apps Script para colar no seu Sheet &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: Colaborador (Add / Edit) -->
+    <div id="modalColaborador" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="modalColaboradorTitle" class="font-bold text-base">Adicionar Colaborador</h3>
+                <button onclick="closeColaboradorModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formColaborador" onsubmit="saveColaborador(event)" class="p-6 space-y-4">
+                <input type="hidden" id="colabId">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">N.º Mecanográfico</label>
+                        <input type="text" id="colabNum" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nome Completo</label>
+                        <input type="text" id="colabNome" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Departamento</label>
+                        <select id="colabDept" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                            <option value="Operações & Produção">Operações & Produção</option>
+                            <option value="Qualidade & Segurança">Qualidade & Segurança</option>
+                            <option value="Tecnologia & Sistemas">Tecnologia & Sistemas</option>
+                            <option value="Recursos Humanos">Recursos Humanos</option>
+                            <option value="Comercial & Vendas">Comercial & Vendas</option>
+                            <option value="Financeiro & Gestão">Financeiro & Gestão</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Cargo / Função</label>
+                        <input type="text" id="colabCargo" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Email Profissional</label>
+                    <input type="email" id="colabEmail" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeColaboradorModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition">Guardar Colaborador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Formação (Add / Edit) -->
+    <div id="modalFormacao" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 id="modalFormacaoTitle" class="font-bold text-base">Registar Nova Ação de Formação</h3>
+                <button onclick="closeFormacaoModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formFormacao" onsubmit="saveFormacao(event)" class="p-6 overflow-y-auto space-y-4">
+                <input type="hidden" id="formacaoId">
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Código / Ref.</label>
+                        <input type="text" id="formCodigo" placeholder="FOR-2026-001" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Título da Formação</label>
+                        <input type="text" id="formTitulo" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Área Temática</label>
+                        <select id="formArea" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                            <option value="Qualidade & ISO">Qualidade & ISO</option>
+                            <option value="Segurança no Trabalho">Segurança no Trabalho</option>
+                            <option value="Tecnologia & IT">Tecnologia & IT</option>
+                            <option value="Liderança & Soft Skills">Liderança & Soft Skills</option>
+                            <option value="Técnica & Operações">Técnica & Operações</option>
+                            <option value="Línguas">Línguas</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Entidade Formadora</label>
+                        <input type="text" id="formEntidade" placeholder="Ex: Interna / DGERT Certificada" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Âmbito / Tipo</label>
+                        <select id="formTipo" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                            <option value="Interna">Interna</option>
+                            <option value="Externa Certificada DGERT">Externa DGERT</option>
+                            <option value="Externa Não Certificada">Externa Genérica</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Data Realização / Início</label>
+                        <input type="date" id="formData" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Carga Horária (Horas)</label>
+                        <input type="number" step="0.5" min="0.5" id="formHoras" required class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Estado</label>
+                        <select id="formEstado" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                            <option value="Concluída">Concluída</option>
+                            <option value="Em Curso">Em Curso</option>
+                            <option value="Planeada">Planeada</option>
+                            <option value="Cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Custo Total (€)</label>
+                        <input type="number" step="1" id="formCusto" value="0" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Link Evidências / Certificados</label>
+                        <input type="text" id="formEvidencias" placeholder="URL da pasta de registos/dossiê" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Critério de Avaliação de Eficácia (ISO 9001)</label>
+                    <textarea id="formCriterioEficacia" rows="2" placeholder="Como será avaliada a eficácia desta formação (ex.: redução de incidentes, aprovação em teste, aplicação prática...)" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Selecionar Participantes (Colaboradores)</label>
+                    <div id="formParticipantesList" class="max-h-36 overflow-y-auto border border-slate-200 rounded-xl p-2.5 space-y-1 text-xs bg-slate-50">
+                        <!-- Checkboxes injected by JS -->
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeFormacaoModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold hover:bg-brand-700 transition">Guardar Ação de Formação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Avaliação Eficácia ISO 9001 -->
+    <div id="modalISO" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-base flex items-center gap-2"><i class="fa-solid fa-star text-amber-400"></i> Avaliação de Eficácia (ISO 9001)</h3>
+                <button onclick="closeISOModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="formISO" onsubmit="saveISOEficacia(event)" class="p-6 space-y-4">
+                <input type="hidden" id="isoFormacaoId">
+
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+                    <span class="text-slate-500 block">Formação:</span>
+                    <span id="isoFormTitulo" class="font-bold text-slate-800 text-sm"></span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Eficácia Verificada?</label>
+                    <select id="isoEfetuada" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500">
+                        <option value="SIM">SIM - Objetivos Cumpridos com Sucesso</option>
+                        <option value="PARCIAL">PARCIAL - Necessita Acompanhamento</option>
+                        <option value="NAO">NÃO - Formação Não Eficaz / Repetir</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Classificação de Impacto (1 a 5 Estrelas)</label>
+                    <select id="isoNota" class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500 font-bold">
+                        <option value="5">⭐⭐⭐⭐⭐ 5 - Excelente Impacto no Trabalho</option>
+                        <option value="4">⭐⭐⭐⭐ 4 - Bom Desempenho Adquirido</option>
+                        <option value="3">⭐⭐⭐ 3 - Satisfatório / Aplicação Regular</option>
+                        <option value="2">⭐⭐ 2 - Baixo Impacto</option>
+                        <option value="1">⭐ 1 - Nulo Impacto</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Observações da Chefia / Evidência Prática</label>
+                    <textarea id="isoObservacoes" rows="3" placeholder="Descreva melhorias observadas no posto de trabalho ou plano de ação subsequente..." class="w-full p-2.5 border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-brand-500"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeISOModal()" class="px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-200 transition">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition">Registar Avaliação ISO</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Informação Global do Colaborador -->
+    <div id="modalDetalheColaborador" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-start gap-3 shrink-0">
+                <div class="min-w-0">
+                    <p id="detColabMec" class="text-[11px] text-slate-400 font-mono"></p>
+                    <h3 id="detColabNome" class="font-bold text-base leading-snug"></h3>
+                    <p id="detColabCargo" class="text-xs text-slate-300 mt-0.5"></p>
+                </div>
+                <button onclick="closeDetalheColaboradorModal()" class="text-slate-400 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-6 overflow-y-auto space-y-6">
+                <!-- Info básica + resumo global -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-slate-50 rounded-xl p-3">
+                        <p class="text-[10px] uppercase text-slate-400 font-semibold">Email</p>
+                        <p id="detColabEmail" class="text-xs font-medium text-slate-700 break-words mt-0.5">—</p>
+                    </div>
+                    <div class="bg-slate-50 rounded-xl p-3">
+                        <p class="text-[10px] uppercase text-slate-400 font-semibold">Admissão</p>
+                        <p id="detColabAdmissao" class="text-xs font-medium text-slate-700 mt-0.5">—</p>
+                    </div>
+                    <div class="bg-brand-50 rounded-xl p-3">
+                        <p class="text-[10px] uppercase text-brand-500 font-semibold">Total Horas (sempre)</p>
+                        <p id="detColabTotalHoras" class="text-lg font-bold text-brand-700 mt-0.5">0h</p>
+                    </div>
+                    <div class="bg-brand-50 rounded-xl p-3">
+                        <p class="text-[10px] uppercase text-brand-500 font-semibold">Formações / Anos Ativos</p>
+                        <p class="text-lg font-bold text-brand-700 mt-0.5"><span id="detColabTotalFormacoes">0</span> / <span id="detColabAnosAtivos">0</span></p>
+                    </div>
+                </div>
+
+                <!-- Por ano + Por área -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <p class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2"><i class="fa-regular fa-calendar mr-1 text-slate-400"></i> Cumprimento por Ano (Art. 131.º)</p>
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="text-left text-slate-400 border-b border-slate-200">
+                                    <th class="py-1 pr-2">Ano</th><th class="py-1 pr-2">Horas</th><th class="py-1 pr-2">Ações</th><th class="py-1 text-right">Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody id="detColabPorAno"></tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2"><i class="fa-solid fa-chart-simple mr-1 text-slate-400"></i> Horas por Área (sempre)</p>
+                        <div id="detColabPorArea" class="space-y-2.5"></div>
+                    </div>
+                </div>
+
+                <!-- Histórico -->
+                <div>
+                    <p class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-2"><i class="fa-solid fa-clock-rotate-left mr-1 text-slate-400"></i> Histórico de Formações</p>
+                    <div id="detColabHistorico" class="max-h-56 overflow-y-auto"></div>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+                <button onclick="closeDetalheColaboradorModal(); editColaborador(currentDetalheColaboradorId);" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                </button>
+                <button onclick="closeDetalheColaboradorModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Detalhe completo da Formação -->
+    <div id="modalDetalheFormacao" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-start gap-3 shrink-0">
+                <div class="min-w-0">
+                    <p id="detFormacaoCodigo" class="text-[11px] text-slate-400 font-mono"></p>
+                    <h3 id="detFormacaoTitulo" class="font-bold text-base leading-snug">Detalhe da Formação</h3>
+                </div>
+                <button onclick="closeDetalheFormacaoModal()" class="text-slate-400 hover:text-white shrink-0"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="detFormacaoBody" class="p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm"></div>
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 shrink-0">
+                <button onclick="closeDetalheFormacaoModal(); openISOModal(currentDetalheFormacaoId);" class="px-4 py-2 bg-amber-100 hover:bg-amber-200 text-amber-800 rounded-xl text-xs font-semibold transition">
+                    <i class="fa-solid fa-award"></i> Avaliar Eficácia
+                </button>
+                <button onclick="closeDetalheFormacaoModal(); editFormacao(currentDetalheFormacaoId);" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold transition">
+                    <i class="fa-solid fa-pen-to-square"></i> Editar
+                </button>
+                <button onclick="closeDetalheFormacaoModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-semibold transition">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Apps Script Code snippet -->
+    <div id="modalScriptCode" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full overflow-hidden border border-slate-200">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
+                <h3 class="font-bold text-base">Código Google Apps Script (Sincronização Direta)</h3>
+                <button onclick="toggleScriptCodeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-xs text-slate-600">Copie o código abaixo para o editor de código do seu Google Sheet (<em>Extensões &rarr; Apps Script</em>) para atuar como API de leitura e escrita:</p>
+                <textarea readonly class="w-full h-64 p-3 bg-slate-900 text-emerald-400 font-mono text-[11px] rounded-xl border border-slate-700 focus:outline-none" id="appsScriptTextarea">
+function doGet(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = sheet.getDataRange().getValues();
+  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var payload = JSON.parse(e.postData.contents);
+  // Lógica de gravação na folha
+  return ContentService.createTextOutput(JSON.stringify({status: "success"})).setMimeType(ContentService.MimeType.JSON);
+}
+                </textarea>
+                <div class="flex justify-end">
+                    <button onclick="copyAppsScriptCode()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold rounded-xl">
+                        <i class="fa-regular fa-copy mr-1"></i> Copiar Código
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        
+        // Initial Mock Database based on Portuguese HR & Quality Standards
+        const DEFAULT_COLABORADORES = [
+            { id: "C001", numMecanografico: "101", nome: "Ana Silva", email: "ana.silva@empresa.pt", departamento: "Operações & Produção", cargo: "Operadora de Produção Sênior", dataAdmissao: "2020-03-15" },
+            { id: "C002", numMecanografico: "102", nome: "João Santos", email: "joao.santos@empresa.pt", departamento: "Qualidade & Segurança", cargo: "Técnico de Qualidade ISO", dataAdmissao: "2019-01-10" },
+            { id: "C003", numMecanografico: "103", nome: "Maria Ferreira", email: "maria.ferreira@empresa.pt", departamento: "Tecnologia & Sistemas", cargo: "Engenheira de Software", dataAdmissao: "2021-06-01" },
+            { id: "C004", numMecanografico: "104", nome: "Pedro Oliveira", email: "pedro.oliveira@empresa.pt", departamento: "Recursos Humanos", cargo: "Especialista de Formação", dataAdmissao: "2018-09-20" },
+            { id: "C005", numMecanografico: "105", nome: "Sofia Costa", email: "sofia.costa@empresa.pt", departamento: "Comercial & Vendas", cargo: "Gestora de Conta", dataAdmissao: "2022-02-14" },
+            { id: "C006", numMecanografico: "106", nome: "Rui Martins", email: "rui.martins@empresa.pt", departamento: "Operações & Produção", cargo: "Chefe de Equipa", dataAdmissao: "2017-05-11" },
+            { id: "C007", numMecanografico: "107", nome: "Carla Ribeiro", email: "carla.ribeiro@empresa.pt", departamento: "Financeiro & Gestão", cargo: "Analista Financeira", dataAdmissao: "2023-01-05" }
+        ];
+
+        const DEFAULT_FORMACOES = [
+            {
+                id: "F001",
+                codigo: "FOR-2026-001",
+                titulo: "ISO 9001:2015 - Auditorias Internas e Gestão de Riscos",
+                area: "Qualidade & ISO",
+                entidade: "SGS Portugal (DGERT)",
+                tipo: "Externa Certificada DGERT",
+                data: "2026-02-10",
+                ano: "2026",
+                horas: 24,
+                custo: 1200,
+                estado: "Concluída",
+                participantes: ["C002", "C004", "C006"],
+                evidencias: "https://drive.google.com/folder/iso9001",
+                isoEficacia: { efetuada: true, nota: "5", resultado: "SIM", observacoes: "Aplicações práticas nas auditorias de processos do 1º trimestre com sucesso." }
+            },
+            {
+                id: "F002",
+                codigo: "FOR-2026-002",
+                titulo: "Segurança e Saúde no Trabalho (SST) - Atualização Geral",
+                area: "Segurança no Trabalho",
+                entidade: "Serviço Interno de SST",
+                tipo: "Interna",
+                data: "2026-03-05",
+                ano: "2026",
+                horas: 16,
+                custo: 300,
+                estado: "Concluída",
+                participantes: ["C001", "C002", "C003", "C004", "C005", "C006", "C007"],
+                evidencias: "https://drive.google.com/folder/sst",
+                isoEficacia: { efetuada: true, nota: "4", resultado: "SIM", observacoes: "Cumprimento dos protocolos de emergência e redução de incidentes." }
+            },
+            {
+                id: "F003",
+                codigo: "FOR-2026-003",
+                titulo: "Liderança Efaz e Gestão de Equipas de Alto Desempenho",
+                area: "Liderança & Soft Skills",
+                entidade: "Católica Business School",
+                tipo: "Externa Certificada DGERT",
+                data: "2026-04-18",
+                ano: "2026",
+                horas: 30,
+                custo: 2500,
+                estado: "Em Curso",
+                participantes: ["C004", "C006"],
+                evidencias: "",
+                isoEficacia: { efetuada: false, nota: "0", resultado: "PENDENTE", observacoes: "" }
+            },
+            {
+                id: "F004",
+                codigo: "FOR-2026-004",
+                titulo: "Power BI & Analytics para Gestão de RH",
+                area: "Tecnologia & IT",
+                entidade: "Rumos",
+                tipo: "Externa Certificada DGERT",
+                data: "2026-05-12",
+                ano: "2026",
+                horas: 20,
+                custo: 800,
+                estado: "Planeada",
+                participantes: ["C003", "C004", "C007"],
+                evidencias: "",
+                isoEficacia: { efetuada: false, nota: "0", resultado: "PENDENTE", observacoes: "" }
+            },
+            {
+                id: "F005",
+                codigo: "FOR-2025-010",
+                titulo: "Manutenção Preventiva Industrial e Lean Manufacturing",
+                area: "Técnica & Operações",
+                entidade: "ISQ",
+                tipo: "Externa Certificada DGERT",
+                data: "2025-11-04",
+                ano: "2025",
+                horas: 40,
+                custo: 1800,
+                estado: "Concluída",
+                participantes: ["C001", "C006"],
+                evidencias: "https://drive.google.com/folder/lean",
+                isoEficacia: { efetuada: true, nota: "5", resultado: "SIM", observacoes: "Redução de 15% nos tempos de paragem na linha de montagem." }
+            }
+        ];
+
+        // Global State Variables
+        let dbColaboradores = [];
+        let dbFormacoes = [];
+        let currentDetalheFormacaoId = null;
+        let currentDetalheColaboradorId = null;
+        let activeYears = new Set(['2026']);
+        let chartTendencia = null;
+        let chartArea = null;
+        let chartDepto = null;
+
+        // ================= FILTRO GLOBAL DE ANO(S) =================
+        function getAnosDisponiveis() {
+            const anos = new Set();
+            dbFormacoes.forEach(f => { const a = anoDaFormacao(f); if (a) anos.add(a); });
+            activeYears.forEach(a => { if (a !== 'ALL') anos.add(a); });
+            return [...anos].sort();
+        }
+        function anosSelecionadosOrdenados() {
+            return [...activeYears].filter(a => a !== 'ALL').sort();
+        }
+        function isComparacaoMultipla() {
+            return !activeYears.has('ALL') && activeYears.size > 1;
+        }
+        function anoSelecionado(ano) {
+            return activeYears.has('ALL') || activeYears.has(String(ano));
+        }
+        // Limite legal mínimo do Art. 131.º CT: a empresa tem de assegurar formação
+        // contínua anual a pelo menos esta % dos colaboradores (10% por defeito;
+        // pode ser outro valor se estipulado em convenção coletiva). Configurável
+        // na aba "Conexão Google Sheet".
+        let limiteLegalPct = parseFloat(localStorage.getItem('tms_limite_legal_pct')) || 10;
+
+        function guardarLimiteLegal() {
+            const input = document.getElementById('limiteLegalInput');
+            const v = parseFloat(input && input.value);
+            if (isNaN(v) || v <= 0 || v > 100) {
+                showToast('Introduza uma percentagem válida (entre 0 e 100).', 'error');
+                return;
+            }
+            limiteLegalPct = v;
+            localStorage.setItem('tms_limite_legal_pct', String(v));
+            showToast('Limite legal atualizado para ' + v + '%.', 'success');
+            renderAll();
+        }
+
+        // Sinalética de conformidade (semáforo) para o Art. 131.º CT.
+        // O requisito legal é a empresa assegurar formação contínua anual a pelo
+        // menos limiteLegalPct% dos colaboradores — NÃO é preciso que 100% dos
+        // colaboradores atinjam as 40h todos os anos (as horas não dadas revertem
+        // para um crédito de 3 anos a favor do trabalhador).
+        function statusConformidade(pct) {
+            if (pct >= limiteLegalPct) return { badge: 'bg-emerald-100 text-emerald-800', icon: 'fa-solid fa-circle-check', texto: 'Conforme', wrap: 'bg-emerald-50 text-emerald-600' };
+            if (pct >= limiteLegalPct - 3) return { badge: 'bg-amber-100 text-amber-800', icon: 'fa-solid fa-triangle-exclamation', texto: 'Atenção — perto do limite', wrap: 'bg-amber-50 text-amber-600' };
+            return { badge: 'bg-red-100 text-red-800', icon: 'fa-solid fa-circle-xmark', texto: 'Não Conforme', wrap: 'bg-red-50 text-red-600' };
+        }
+        function formacaoNoFiltro(f) {
+            return anoSelecionado(anoDaFormacao(f));
+        }
+        function labelFiltroAno() {
+            if (activeYears.has('ALL')) return 'Todos os Anos';
+            const anos = anosSelecionadosOrdenados();
+            return anos.length ? anos.join(', ') : 'Todos os Anos';
+        }
+        function renderYearFilterOptions() {
+            const list = document.getElementById('yearFilterList');
+            const allBox = document.getElementById('yearFilterAll');
+            if (!list || !allBox) return;
+            const anos = getAnosDisponiveis();
+            allBox.checked = activeYears.has('ALL');
+            list.innerHTML = anos.map(ano => `
+                <label class="flex items-center gap-2 px-2 py-1.5 hover:bg-slate-50 rounded-lg cursor-pointer text-xs">
+                    <input type="checkbox" onchange="toggleYearOption('${ano}', this.checked)" ${activeYears.has(ano) ? 'checked' : ''} class="rounded accent-brand-600">
+                    ${ano}
+                </label>
+            `).join('');
+            const label = document.getElementById('yearFilterLabel');
+            if (label) label.textContent = labelFiltroAno();
+        }
+        function toggleYearFilterMenu(e) {
+            if (e) e.stopPropagation();
+            const menu = document.getElementById('yearFilterMenu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+        function toggleYearAll(checked) {
+            if (checked) {
+                activeYears = new Set(['ALL']);
+            } else if (activeYears.size <= 1) {
+                const anos = getAnosDisponiveis();
+                activeYears = new Set([anos[anos.length - 1] || String(new Date().getFullYear())]);
+            }
+            renderAll();
+        }
+        function toggleYearOption(ano, checked) {
+            activeYears.delete('ALL');
+            if (checked) activeYears.add(ano);
+            else activeYears.delete(ano);
+            if (activeYears.size === 0) activeYears.add(ano); // impede seleção vazia
+            renderAll();
+        }
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('yearFilterMenu');
+            const btn = document.getElementById('yearFilterBtn');
+            if (menu && !menu.classList.contains('hidden') && !menu.contains(e.target) && e.target !== btn && !(btn && btn.contains(e.target))) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        // ============================================================
+        //  CAMADA DE SINCRONIZAÇÃO COM GOOGLE SHEET (Apps Script Web App)
+        // ============================================================
+        const TMS_WEBAPP_URL_DEFAULT = 'https://script.google.com/macros/s/AKfycbyptSFEyUfKuihls40ZcTwmQhgl-HsgeqmBte9aRmKpsz6FkY9tk3bUkie0N6GQYROb/exec';
+
+        /**
+         * Limpa e valida o URL do Web App.
+         * Devolve '' se não for um URL absoluto https:// — impedindo que o
+         * navegador o interprete como caminho local (erro "Unsafe attempt to
+         * load URL file:///...").
+         */
+        function sanitizeWebAppUrl(u) {
+            let s = (u == null ? '' : u).toString();
+            s = s.replace(/[\s\u00a0]+/g, '').replace(/^["'<]+|["'>]+$/g, '');
+            if (!s) return '';
+            if (s.startsWith('http://')) s = 'https://' + s.slice(7);
+            // Falta o esquema mas parece um endpoint do Apps Script
+            if (!/^https:\/\//i.test(s)) {
+                if (/^(www\.)?script\.google\.com\//i.test(s)) s = 'https://' + s.replace(/^www\./i, '');
+                else return '';
+            }
+            if (!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec/i.test(s)) {
+                // Aceita outros domínios válidos, mas exige URL absoluto
+                try { new URL(s); } catch (e) { return ''; }
+            }
+            return s;
+        }
+
+        const TMS_CONFIG = { webAppUrl: '' };
+        (function initWebAppUrl() {
+            const stored = sanitizeWebAppUrl(localStorage.getItem('tms_appscript_url'));
+            const raw = localStorage.getItem('tms_appscript_url');
+            if (stored) {
+                TMS_CONFIG.webAppUrl = stored;
+                if (raw !== stored) localStorage.setItem('tms_appscript_url', stored);
+            } else {
+                // Valor guardado inválido/vazio: recupera para o URL de origem
+                TMS_CONFIG.webAppUrl = sanitizeWebAppUrl(TMS_WEBAPP_URL_DEFAULT);
+                if (raw) {
+                    localStorage.setItem('tms_appscript_url', TMS_CONFIG.webAppUrl);
+                    console.warn('URL do Web App guardado era inválido (' + JSON.stringify(raw) + '). Reposto para o predefinido.');
+                }
+            }
+        })();
+
+        // Pedido via JSONP — funciona a partir de ficheiro local (file://) e de servidor.
+        function jsonpRequest(params) {
+            return new Promise((resolve, reject) => {
+                const base = sanitizeWebAppUrl(TMS_CONFIG.webAppUrl);
+                if (!base) {
+                    reject(new Error('URL do Web App inválido ou não configurado. Tem de começar por https:// e terminar em /exec.'));
+                    return;
+                }
+                const cb = 'tmscb_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+                const script = document.createElement('script');
+                const timeout = setTimeout(() => { cleanup(); reject(new Error('Tempo limite excedido.')); }, 20000);
+                function cleanup() { try { delete window[cb]; } catch (e) { window[cb] = undefined; } if (script.parentNode) script.parentNode.removeChild(script); clearTimeout(timeout); }
+                window[cb] = (data) => { cleanup(); resolve(data); };
+                const qs = Object.keys(params).map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k])).join('&');
+                script.src = base + (base.includes('?') ? '&' : '?') + qs + '&callback=' + cb;
+                console.log('[TMS] A contactar:', script.src);
+                script.onerror = () => { console.error('[TMS] Falhou o carregamento de:', script.src); cleanup(); reject(new Error('Falha de rede ao contactar o Web App. Ver consola para o URL exato.')); };
+                document.body.appendChild(script);
+            });
+        }
+
+        const TMS_API = {
+            read: () => jsonpRequest({ action: 'read' }),
+            upsert: (sheet, record) => jsonpRequest({ action: 'upsert', sheet: sheet, record: JSON.stringify(record) }),
+            remove: (sheet, id) => jsonpRequest({ action: 'delete', sheet: sheet, id: id })
+        };
+
+        function nextId(prefix, arr) {
+            let max = 0;
+            const re = new RegExp('^' + prefix + '0*(\\d{1,5})$', 'i');
+            arr.forEach(o => {
+                const raw = (o.id || '').toString().trim();
+                const m = raw.match(re);
+                if (m) { const n = parseInt(m[1], 10); if (!isNaN(n) && n > max) max = n; }
+            });
+            return prefix + String(max + 1).padStart(3, '0');
+        }
+
+        // ---- Mapeamento Folha <-> Modelo da app ----
+        function rowToColab(r) {
+            return { id: (r.id || '').toString().trim(), numMecanografico: (r.numMecanografico || '').toString(), nome: r.nome || '', email: r.email || '', departamento: r.departamento || '', cargo: r.cargo || '', dataAdmissao: (r.dataAdmissao || '').toString() };
+        }
+        function colabToRecord(c) {
+            return { id: c.id, numMecanografico: c.numMecanografico, nome: c.nome, email: c.email, departamento: c.departamento, cargo: c.cargo, dataAdmissao: c.dataAdmissao };
+        }
+        function rowToFormacao(r) {
+            return {
+                id: (r.id || '').toString().trim(), codigo: r.codigo || '', titulo: r.titulo || '', area: r.area || '', entidade: r.entidade || '', tipo: r.tipo || '',
+                data: (r.data || '').toString(), ano: (r.ano || '').toString(), horas: parseFloat(r.horas) || 0, custo: parseFloat(r.custo) || 0,
+                estado: r.estado || 'Planeada', evidencias: r.evidencias || '',
+                participantes: (r.participantes || '').toString().split(',').map(s => s.trim()).filter(Boolean),
+                // Campos extra que existem no Sheet mas que a app (ainda) não edita —
+                // mantidos para consulta no card de detalhe, sem se perderem na sincronização.
+                numAcao: (r.num_acao != null ? r.num_acao : '').toString(),
+                objetivo: r.objetivo || '',
+                dataPrevistaInicio: (r.data_prevista_inicio || '').toString(),
+                dataPrevistaFim: (r.data_prevista_fim || '').toString(),
+                dataFim: (r.data_fim || '').toString(),
+                numFormandos: (r.num_formandos != null ? r.num_formandos : '').toString(),
+                criterioEficacia: r.criterio_eficacia || '',
+                atualizadoA: (r.atualizado_a || '').toString(),
+                isoEficacia: {
+                    efetuada: /^(true|verdadeiro|sim|1)$/i.test((r.eficacia_efetuada || '').toString().trim()),
+                    nota: (r.eficacia_nota != null ? r.eficacia_nota : '0').toString(),
+                    resultado: r.eficacia_resultado || 'PENDENTE',
+                    observacoes: r.eficacia_observacoes || ''
+                }
+            };
+        }
+        function formacaoToRecord(f) {
+            return {
+                id: f.id, codigo: f.codigo, titulo: f.titulo, area: f.area, entidade: f.entidade, tipo: f.tipo,
+                data: f.data, ano: f.ano, horas: f.horas, custo: f.custo, estado: f.estado, evidencias: f.evidencias || '',
+                participantes: (f.participantes || []).join(','),
+                criterio_eficacia: f.criterioEficacia || '',
+                eficacia_efetuada: (f.isoEficacia && f.isoEficacia.efetuada) ? 'VERDADEIRO' : 'FALSO',
+                eficacia_nota: f.isoEficacia ? f.isoEficacia.nota : '0',
+                eficacia_resultado: f.isoEficacia ? f.isoEficacia.resultado : 'PENDENTE',
+                eficacia_observacoes: f.isoEficacia ? f.isoEficacia.observacoes : ''
+            };
+        }
+
+        // ---- Sincronização ----
+        async function syncFromServer() {
+            if (!TMS_CONFIG.webAppUrl) { showToast('Configure primeiro o URL do Web App.', 'warning'); return; }
+            updateSheetBadge('syncing');
+            try {
+                const data = await TMS_API.read();
+                if (!data || data.status === 'error') throw new Error((data && data.message) || 'Resposta inválida.');
+                if (Array.isArray(data.colaboradores)) dbColaboradores = data.colaboradores.map(rowToColab).filter(c => c.id);
+                if (Array.isArray(data.formacoes)) dbFormacoes = data.formacoes.map(rowToFormacao).filter(f => f.id);
+                saveToStorage();
+                renderAll();
+                updateSheetBadge('ok');
+                showToast('Dados sincronizados com o Google Sheet.', 'success');
+            } catch (err) {
+                updateSheetBadge('error');
+                showToast('Não foi possível sincronizar: ' + err.message, 'error');
+            }
+        }
+
+        async function forcarAtualizacaoSheet() {
+            const btn = document.getElementById('btnRefreshSheet');
+            const icon = document.getElementById('iconRefreshSheet');
+            if (btn) btn.disabled = true;
+            if (icon) icon.classList.add('fa-spin');
+            try {
+                await syncFromServer();
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        // Envio de alterações (best-effort — a base local já foi atualizada).
+        function pushRecord(sheet, record) {
+            if (!record) return;
+            if (!TMS_CONFIG.webAppUrl) { updateSheetBadge('offline'); return; }
+            updateSheetBadge('syncing');
+            TMS_API.upsert(sheet, record)
+                .then(res => { if (res && res.status === 'error') throw new Error(res.message); updateSheetBadge('ok'); })
+                .catch(err => { updateSheetBadge('error'); showToast('Guardado localmente, mas falhou no Sheet: ' + err.message, 'warning'); });
+        }
+        function pushDelete(sheet, id) {
+            if (!TMS_CONFIG.webAppUrl) { updateSheetBadge('offline'); return; }
+            updateSheetBadge('syncing');
+            TMS_API.remove(sheet, id)
+                .then(res => { if (res && res.status === 'error') throw new Error(res.message); updateSheetBadge('ok'); })
+                .catch(err => { updateSheetBadge('error'); showToast('Removido localmente, mas falhou no Sheet: ' + err.message, 'warning'); });
+        }
+
+        function updateSheetBadge(state) {
+            const txt = document.getElementById('sheetStatusText');
+            if (!txt) return;
+            const map = {
+                ok: ['Google Sheet: Sincronizado', 'text-emerald-400'],
+                syncing: ['A sincronizar\u2026', 'text-amber-400'],
+                error: ['Erro de sincronização', 'text-red-400'],
+                offline: ['Sem ligação (local)', 'text-slate-400']
+            };
+            const m = map[state] || map.offline;
+            txt.textContent = m[0];
+            txt.className = 'hidden sm:inline font-medium ' + m[1];
+        }
+
+        window.onload = function() {
+            loadFromStorage();
+            renderAll();
+            const urlInput = document.getElementById('webAppUrlInput');
+            if (urlInput && TMS_CONFIG.webAppUrl) urlInput.value = TMS_CONFIG.webAppUrl;
+            const limiteInput = document.getElementById('limiteLegalInput');
+            if (limiteInput) limiteInput.value = limiteLegalPct;
+            if (TMS_CONFIG.webAppUrl) { syncFromServer(); } else { updateSheetBadge('offline'); }
+        };
+
+        function loadFromStorage() {
+            const localColabs = localStorage.getItem('tms_colaboradores');
+            const localForms = localStorage.getItem('tms_formacoes');
+
+            if (localColabs) {
+                dbColaboradores = JSON.parse(localColabs);
+            } else {
+                dbColaboradores = [...DEFAULT_COLABORADORES];
+                saveToStorage();
+            }
+
+            if (localForms) {
+                dbFormacoes = JSON.parse(localForms);
+            } else {
+                dbFormacoes = [...DEFAULT_FORMACOES];
+                saveToStorage();
+            }
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('tms_colaboradores', JSON.stringify(dbColaboradores));
+            localStorage.setItem('tms_formacoes', JSON.stringify(dbFormacoes));
+        }
+
+        function switchTab(tabId) {
+            // Tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            const activeBtn = document.getElementById(`tab-${tabId}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            // Sections
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            const activeSec = document.getElementById(`sec-${tabId}`);
+            if (activeSec) activeSec.classList.remove('hidden');
+
+            // Re-render charts when entering dashboard
+            if (tabId === 'dashboard') {
+                setTimeout(() => { renderDashboardCharts(); }, 50);
+            }
+        }
+
+        function renderAll() {
+            renderYearFilterOptions();
+            renderDashboardKPIs();
+            renderDashboardCharts();
+            renderColaboradoresTable();
+            renderFormacoesTable();
+            renderISOAuditTable();
+            renderAuditAlerts();
+        }
+
+        // Comparação robusta de estado (ignora espaços, acentos e maiúsculas/minúsculas)
+        function isConcluida(estado) {
+            return (estado || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase() === 'concluida';
+        }
+        function sameAno(a, b) {
+            return String(a == null ? '' : a).trim() === String(b == null ? '' : b).trim();
+        }
+
+        // Normaliza um id (C004, " c004 ", 4 -> "C004") para comparação fiável
+        function normId(v) {
+            let s = (v == null ? '' : v).toString().trim().toUpperCase();
+            if (!s) return '';
+            const m = s.match(/^([A-Z]*)0*(\d+)$/);
+            if (m) return (m[1] || 'C') + String(parseInt(m[2], 10)).padStart(3, '0');
+            return s;
+        }
+
+        // Lê as horas de forma tolerante: 4 | "4" | "4,5" | "40 h" | "1.234,5"
+        function parseHoras(v) {
+            if (typeof v === 'number') return isNaN(v) ? 0 : v;
+            let s = (v == null ? '' : v).toString().trim();
+            if (!s) return 0;
+            s = s.replace(/[^\d.,-]/g, '');
+            if (s.includes(',') && s.includes('.')) s = s.replace(/\./g, '').replace(',', '.');
+            else if (s.includes(',')) s = s.replace(',', '.');
+            const n = parseFloat(s);
+            return isNaN(n) ? 0 : n;
+        }
+
+        // Ano da formação: usa a coluna "ano"; se estiver vazia/inválida, deriva de "data"
+        function anoDaFormacao(f) {
+            const a = (f.ano == null ? '' : f.ano).toString().trim();
+            let m = a.match(/(19|20)\d{2}/);
+            if (m) return m[0];
+            m = (f.data == null ? '' : f.data).toString().match(/(19|20)\d{2}/);
+            return m ? m[0] : '';
+        }
+
+        // Participantes normalizados de uma formação (aceita array ou texto "C1,C2")
+        function participantesDe(f) {
+            let raw = f.participantes;
+            if (!Array.isArray(raw)) raw = (raw == null ? '' : raw).toString().split(',');
+            return raw.map(normId).filter(Boolean);
+        }
+
+        /**
+         * Conjunto de chaves possíveis de um colaborador para o cruzar com
+         * "participantes". Em algumas folhas o código usado em "participantes"
+         * (ex. C014) está em "id"; noutras está em "numMecanografico". Aceitar
+         * ambos torna o cruzamento imune a essa inconsistência.
+         */
+        function chavesColaborador(c) {
+            const s = new Set();
+            const a = normId(c && c.id); if (a) s.add(a);
+            const b = normId(c && c.numMecanografico); if (b) s.add(b);
+            return s;
+        }
+
+        // Aceita: undefined (usa o filtro global ativo), 'ALL', uma string de ano, ou um Set/array de anos
+        function anosCorrespondem(f, years) {
+            if (years === 'ALL') return true;
+            const ano = anoDaFormacao(f);
+            if (years instanceof Set) return years.has('ALL') || years.has(ano);
+            if (Array.isArray(years)) return years.includes('ALL') || years.includes(ano);
+            return String(years).trim() === ano;
+        }
+        function calculateHorasPorColaborador(colabId, yearsOverride) {
+            const colab = dbColaboradores.find(c => c.id === colabId) || { id: colabId };
+            const chaves = chavesColaborador(colab);
+            const years = yearsOverride !== undefined ? yearsOverride : activeYears;
+            let total = 0;
+            dbFormacoes.forEach(f => {
+                if (!isConcluida(f.estado)) return;                                  // só "Concluída" conta
+                const parts = participantesDe(f);
+                if (!parts.some(p => chaves.has(p))) return;                         // tem de ser participante (por id OU numMecanografico)
+                if (!anosCorrespondem(f, years)) return;
+                total += parseHoras(f.horas);                                        // soma a coluna "horas"
+            });
+            return Math.round(total * 100) / 100;
+        }
+
+        /**
+         * Diagnóstico do Art. 131.º — abre a consola (F12) e corre: tmsDiagnostico()
+         * Mostra onde a ligação entre folhas está a falhar.
+         */
+        function tmsDiagnostico() {
+            const idsColab = dbColaboradores.map(c => normId(c.id));
+            const concluidas = dbFormacoes.filter(f => isConcluida(f.estado));
+            const semAno = dbFormacoes.filter(f => !anoDaFormacao(f));
+            const semParts = dbFormacoes.filter(f => participantesDe(f).length === 0);
+            const semHoras = concluidas.filter(f => parseHoras(f.horas) === 0);
+
+            const numsColab = dbColaboradores.map(c => normId(c.numMecanografico));
+            const orfaos = {};
+            dbFormacoes.forEach(f => participantesDe(f).forEach(p => {
+                if (!idsColab.includes(p) && !numsColab.includes(p)) orfaos[p] = (orfaos[p] || 0) + 1;
+            }));
+            const soPorNum = dbFormacoes.some(f => participantesDe(f).some(p => !idsColab.includes(p) && numsColab.includes(p)));
+
+            console.log('%c=== DIAGNÓSTICO TMS Pro ===', 'font-weight:bold');
+            console.log('Colaboradores carregados:', dbColaboradores.length);
+            console.log('Formações carregadas:', dbFormacoes.length, '| Concluídas:', concluidas.length);
+            console.log('Anos selecionados:', labelFiltroAno());
+            console.log('URL do Web App em uso:', TMS_CONFIG.webAppUrl || '(nenhum)');
+            console.log('Estados encontrados:', [...new Set(dbFormacoes.map(f => (f.estado || '(vazio)').toString().trim()))]);
+            console.log('Anos encontrados:', [...new Set(dbFormacoes.map(f => anoDaFormacao(f) || '(vazio)'))].sort());
+            console.log('Formações SEM ano:', semAno.length, '| SEM participantes:', semParts.length, '| Concluídas com horas=0:', semHoras.length);
+            console.log('IDs em "participantes" que NÃO existem em Colaboradores:', Object.keys(orfaos).length ? orfaos : 'nenhum (ligação OK)');
+            console.table(dbColaboradores.map(c => ({
+                id: c.id, nome: c.nome,
+                horas_filtro_ativo: calculateHorasPorColaborador(c.id, activeYears),
+                horas_todos_anos: calculateHorasPorColaborador(c.id, 'ALL')
+            })));
+
+            let msg;
+            if (!dbFormacoes.length) msg = 'Nenhuma formação carregada — a sincronização com o Sheet não trouxe dados.';
+            else if (Object.keys(orfaos).length) msg = 'Os IDs em "participantes" não correspondem aos IDs da folha Colaboradores.';
+            else if (semParts.length === dbFormacoes.length) msg = 'A coluna "participantes" está vazia em todas as formações.';
+            else if (!concluidas.length) msg = 'Nenhuma formação com estado "Concluída".';
+            else if (semAno.length === dbFormacoes.length) msg = 'A coluna "ano" está vazia em todas as formações.';
+            else if (soPorNum) msg = 'Os códigos em "participantes" correspondem a "numMecanografico", não a "id" — a app já compensa isto automaticamente.';
+            else msg = 'Ligação aparentemente correta — ver a tabela na consola.';
+            console.log('%cCONCLUSÃO: ' + msg, 'color:#b45309;font-weight:bold');
+            showToast('Diagnóstico escrito na consola (F12). ' + msg, 'info');
+            return msg;
+        }
+
+        function renderDashboardKPIs() {
+            // Filter Formacoes by selected year(s)
+            const formacoesAno = dbFormacoes.filter(formacaoNoFiltro);
+            const formacoesConcluidas = formacoesAno.filter(f => f.estado === "Concluída");
+
+            // Total Hours
+            let totalHoras = 0;
+            formacoesConcluidas.forEach(f => {
+                totalHoras += (parseFloat(f.horas) * f.participantes.length);
+            });
+            document.getElementById('kpiTotalHoras').textContent = `${totalHoras}h`;
+
+            // Goal = Total employees * 40h
+            const totalColabs = dbColaboradores.length;
+            const metaHoras = totalColabs * 40;
+            document.getElementById('kpiMetaHoras').textContent = `${metaHoras}h`;
+
+            const percentMeta = metaHoras > 0 ? Math.min(100, Math.round((totalHoras / metaHoras) * 100)) : 0;
+            document.getElementById('kpiHorasPercent').textContent = `${percentMeta}% cumprido`;
+
+            // Artigo 131 Compliance (% with >= 40h) + sinalética de conformidade
+            const tituloLegalEl = document.getElementById('kpiConcretizacaoLegal');
+            const badgeLegalEl = document.getElementById('badgeConformidadeLegal');
+            const iconLegalEl = document.getElementById('iconConformidadeLegal');
+            const textoLegalEl = document.getElementById('textoConformidadeLegal');
+            const wrapLegalEl = document.getElementById('kpiLegalIconWrap');
+            const breakdownLegalEl = document.getElementById('kpiLegalBreakdown');
+            const countRowLegalEl = document.getElementById('kpiLegalCountRow');
+            const verBtnEl = document.getElementById('kpiLegalVerBtn');
+            const cardLegalEl = document.getElementById('kpiLegalCard');
+
+            const limiteLegalTextoEl = document.getElementById('kpiLimiteLegalTexto');
+            if (limiteLegalTextoEl) limiteLegalTextoEl.textContent = limiteLegalPct + '%';
+
+            function aplicarSinaletica(pct) {
+                const s = statusConformidade(pct);
+                if (badgeLegalEl) badgeLegalEl.className = 'mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ' + s.badge;
+                if (iconLegalEl) iconLegalEl.className = s.icon;
+                if (textoLegalEl) textoLegalEl.textContent = s.texto;
+                if (wrapLegalEl) wrapLegalEl.className = 'p-3 rounded-xl shrink-0 ' + s.wrap;
+                const corBorda = pct >= 100 ? 'border-emerald-200' : (pct >= 70 ? 'border-amber-200' : 'border-red-200');
+                if (cardLegalEl) cardLegalEl.className = 'bg-white p-5 rounded-2xl border-2 shadow-sm flex flex-col justify-between hover:border-slate-300 transition ' + corBorda;
+                return s;
+            }
+
+            let colabsCompliant = 0;
+            let percentLegal = 0;
+
+            if (isComparacaoMultipla()) {
+                // O Art. 131.º é um requisito ANUAL — somar horas de vários anos
+                // daria uma % de conformidade artificialmente otimista. Por isso,
+                // em modo de comparação mostra-se o cumprimento de CADA ano à parte.
+                const anos = anosSelecionadosOrdenados();
+                let piorPct = 100;
+                const linhas = anos.map(ano => {
+                    let compliant = 0;
+                    dbColaboradores.forEach(c => { if (calculateHorasPorColaborador(c.id, new Set([ano])) >= 40) compliant++; });
+                    const pct = totalColabs > 0 ? Math.round((compliant / totalColabs) * 100) : 0;
+                    if (pct < piorPct) piorPct = pct;
+                    const s = statusConformidade(pct);
+                    return `<div class="flex items-center justify-between gap-2 text-xs">
+                        <span class="font-semibold text-slate-600">${ano}</span>
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-bold ${s.badge}"><i class="${s.icon}"></i> ${pct}% (${compliant}/${totalColabs})</span>
+                    </div>`;
+                }).join('');
+
+                if (tituloLegalEl) tituloLegalEl.textContent = 'Ver por ano';
+                if (breakdownLegalEl) { breakdownLegalEl.innerHTML = linhas; breakdownLegalEl.classList.remove('hidden'); }
+                if (countRowLegalEl) countRowLegalEl.classList.add('hidden');
+                aplicarSinaletica(piorPct);
+                if (textoLegalEl) textoLegalEl.textContent = piorPct >= 100 ? 'Conforme em todos os anos' : 'Detalhe por ano abaixo';
+                percentLegal = piorPct;
+            } else {
+                dbColaboradores.forEach(c => {
+                    const h = calculateHorasPorColaborador(c.id);
+                    if (h >= 40) colabsCompliant++;
+                });
+                percentLegal = totalColabs > 0 ? Math.round((colabsCompliant / totalColabs) * 100) : 0;
+
+                if (tituloLegalEl) tituloLegalEl.textContent = `${percentLegal}%`;
+                if (breakdownLegalEl) { breakdownLegalEl.innerHTML = ''; breakdownLegalEl.classList.add('hidden'); }
+                if (countRowLegalEl) countRowLegalEl.classList.remove('hidden');
+                document.getElementById('kpiLegalCount').textContent = `${colabsCompliant} / ${totalColabs}`;
+                aplicarSinaletica(percentLegal);
+            }
+
+            if (verBtnEl) verBtnEl.classList.toggle('hidden', percentLegal >= 100);
+
+            // ISO Effectiveness Evaluation
+            let avaliadas = 0;
+            formacoesConcluidas.forEach(f => {
+                if (f.isoEficacia && f.isoEficacia.efetuada) avaliadas++;
+            });
+
+            const percentEficacia = formacoesConcluidas.length > 0 ? Math.round((avaliadas / formacoesConcluidas.length) * 100) : 0;
+            document.getElementById('kpiEficaciaIso').textContent = `${percentEficacia}%`;
+            document.getElementById('kpiEficaciaCount').textContent = `${avaliadas} / ${formacoesConcluidas.length}`;
+
+            // Investment
+            let totalCusto = 0;
+            formacoesAno.forEach(f => totalCusto += parseFloat(f.custo || 0));
+            document.getElementById('kpiInvestimentoTotal').textContent = `${totalCusto.toLocaleString('pt-PT')} €`;
+
+            const custoMedio = totalColabs > 0 ? Math.round(totalCusto / totalColabs) : 0;
+            document.getElementById('kpiCustoPorColaborador').textContent = `${custoMedio.toLocaleString('pt-PT')} €`;
+        }
+
+        function renderDashboardCharts() {
+            const CORES = ['#2563eb', '#059669', '#d97706', '#9333ea', '#e11d48', '#0284c7'];
+            const comparar = isComparacaoMultipla();
+            const anosComparar = anosSelecionadosOrdenados();
+
+            // Chart 1: Monthly Trend (comparação por ano quando vários anos selecionados)
+            const ctxTrend = document.getElementById('chartTendenciaMensal')?.getContext('2d');
+            if (ctxTrend) {
+                if (chartTendencia) chartTendencia.destroy();
+
+                const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+                let datasetsTrend;
+
+                if (comparar) {
+                    datasetsTrend = anosComparar.map((ano, i) => {
+                        const horasMensais = new Array(12).fill(0);
+                        dbFormacoes.forEach(f => {
+                            if (anoDaFormacao(f) !== ano) return;
+                            if (f.data) {
+                                const m = new Date(f.data).getMonth();
+                                if (m >= 0 && m < 12) horasMensais[m] += (parseHoras(f.horas) * participantesDe(f).length);
+                            }
+                        });
+                        const cor = CORES[i % CORES.length];
+                        return {
+                            label: ano, data: horasMensais, borderColor: cor,
+                            backgroundColor: cor + '22', fill: false, tension: 0.3,
+                            borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: cor
+                        };
+                    });
+                } else {
+                    const horasMensais = new Array(12).fill(0);
+                    dbFormacoes.filter(formacaoNoFiltro).forEach(f => {
+                        if (f.data) {
+                            const m = new Date(f.data).getMonth();
+                            if (m >= 0 && m < 12) horasMensais[m] += (parseHoras(f.horas) * participantesDe(f).length);
+                        }
+                    });
+                    datasetsTrend = [{
+                        label: 'Horas Formação Totais', data: horasMensais, borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37, 99, 235, 0.1)', fill: true, tension: 0.3,
+                        borderWidth: 3, pointRadius: 4, pointBackgroundColor: '#1e40af'
+                    }];
+                }
+
+                chartTendencia = new Chart(ctxTrend, {
+                    type: 'line',
+                    data: { labels: meses, datasets: datasetsTrend },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: comparar } },
+                        scales: { y: { beginAtZero: true } }
+                    }
+                });
+            }
+
+            // Chart 2: Area Distribution (respeita o(s) ano(s) selecionado(s))
+            const ctxArea = document.getElementById('chartAreaFormacao')?.getContext('2d');
+            if (ctxArea) {
+                if (chartArea) chartArea.destroy();
+
+                const areaCounts = {};
+                dbFormacoes.filter(formacaoNoFiltro).forEach(f => {
+                    areaCounts[f.area] = (areaCounts[f.area] || 0) + (parseHoras(f.horas) * participantesDe(f).length);
+                });
+
+                chartArea = new Chart(ctxArea, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(areaCounts).length ? Object.keys(areaCounts) : ['Sem Dados'],
+                        datasets: [{
+                            data: Object.keys(areaCounts).length ? Object.values(areaCounts) : [1],
+                            backgroundColor: ['#2563eb', '#059669', '#d97706', '#9333ea', '#0284c7', '#e11d48']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } } }
+                    }
+                });
+            }
+
+            // Chart 3: Média de Horas por Colaborador por Departamento
+            // (departamentos calculados a partir dos dados reais, não de uma lista fixa —
+            //  antes ficava sempre vazio porque a lista fixa nunca coincidia com os
+            //  departamentos reais da folha "Colaboradores")
+            const ctxDepto = document.getElementById('chartDepartamentos')?.getContext('2d');
+            if (ctxDepto) {
+                if (chartDepto) chartDepto.destroy();
+
+                const deptos = [...new Set(dbColaboradores.map(c => (c.departamento || 'Sem Departamento').toString().trim()).filter(Boolean))].sort();
+
+                let datasetsDepto;
+                if (comparar) {
+                    datasetsDepto = anosComparar.map((ano, i) => ({
+                        label: ano,
+                        data: deptos.map(d => {
+                            const colabs = dbColaboradores.filter(c => (c.departamento || 'Sem Departamento').toString().trim() === d);
+                            if (!colabs.length) return 0;
+                            let sum = 0;
+                            colabs.forEach(c => sum += calculateHorasPorColaborador(c.id, new Set([ano])));
+                            return Math.round(sum / colabs.length);
+                        }),
+                        backgroundColor: CORES[i % CORES.length],
+                        borderRadius: 4
+                    }));
+                } else {
+                    datasetsDepto = [{
+                        label: 'Média de Horas / Colaborador',
+                        data: deptos.map(d => {
+                            const colabs = dbColaboradores.filter(c => (c.departamento || 'Sem Departamento').toString().trim() === d);
+                            if (!colabs.length) return 0;
+                            let sum = 0;
+                            colabs.forEach(c => sum += calculateHorasPorColaborador(c.id));
+                            return Math.round(sum / colabs.length);
+                        }),
+                        backgroundColor: '#1d4ed8',
+                        borderRadius: 6
+                    }];
+                }
+
+                chartDepto = new Chart(ctxDepto, {
+                    type: 'bar',
+                    data: { labels: deptos, datasets: datasetsDepto },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: comparar } },
+                        scales: {
+                            x: { ticks: { maxRotation: 40, minRotation: 40, font: { size: 9 } } },
+                            y: { beginAtZero: true, title: { display: true, text: 'Horas' } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function renderColaboradoresTable() {
+            const tbody = document.getElementById('colaboradoresTableBody');
+            const search = document.getElementById('searchColaboradorInput')?.value.toLowerCase() || '';
+
+            const filtered = dbColaboradores.filter(c => 
+                c.nome.toLowerCase().includes(search) || 
+                c.numMecanografico.toLowerCase().includes(search) || 
+                c.departamento.toLowerCase().includes(search)
+            );
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Nenhum colaborador encontrado.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(c => {
+                const horas = calculateHorasPorColaborador(c.id);
+                const faltam = Math.max(0, 40 - horas);
+                const isCompliant = horas >= 40;
+
+                const statusBadge = isCompliant 
+                    ? `<span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><i class="fa-solid fa-check"></i> 40h Cumpridas</span>`
+                    : `<span class="px-2.5 py-1 bg-amber-100 text-amber-800 rounded-lg text-xs font-semibold inline-flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> Faltam ${faltam}h</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 font-semibold text-slate-800 cursor-pointer hover:bg-brand-50/60 transition" onclick="abrirDetalheColaborador('${c.id}')" title="Ver informação global">
+                            <span class="text-xs text-slate-400 block">Mec. #${c.numMecanografico}</span>
+                            <span class="hover:text-brand-700">${c.nome}</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="font-medium text-slate-700 block">${c.departamento}</span>
+                            <span class="text-xs text-slate-400">${c.cargo}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-600">${labelFiltroAno()}</td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="text-sm font-bold text-slate-900">${horas}h</span>
+                        </td>
+                        <td class="py-3 px-4 text-center text-slate-500 font-medium">${faltam}h</td>
+                        <td class="py-3 px-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <button onclick="editColaborador('${c.id}')" class="p-1.5 text-slate-400 hover:text-brand-600 transition" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteColaborador('${c.id}')" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Remover"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderFormacoesTable() {
+            const tbody = document.getElementById('formacoesTableBody');
+            const estadoFilter = document.getElementById('filterEstadoFormacao')?.value || 'ALL';
+            const areaFilter = document.getElementById('filterAreaFormacao')?.value || 'ALL';
+
+            const filtered = dbFormacoes.filter(f => {
+                const yearMatch = formacaoNoFiltro(f);
+                const estadoMatch = (estadoFilter === "ALL" || f.estado === estadoFilter);
+                const areaMatch = (areaFilter === "ALL" || f.area === areaFilter);
+                return yearMatch && estadoMatch && areaMatch;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-400">Nenhuma formação registada com estes filtros.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(f => {
+                let badgeClass = "bg-slate-100 text-slate-700";
+                if (f.estado === "Concluída") badgeClass = "bg-emerald-100 text-emerald-800 font-semibold";
+                if (f.estado === "Em Curso") badgeClass = "bg-blue-100 text-blue-800 font-semibold";
+                if (f.estado === "Planeada") badgeClass = "bg-amber-100 text-amber-800 font-semibold";
+
+                const isEficaz = f.isoEficacia && f.isoEficacia.efetuada;
+                const eficaciaBadge = isEficaz 
+                    ? `<span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> Avaliada (${f.isoEficacia.nota}★)</span>`
+                    : `<span class="text-amber-600 font-medium"><i class="fa-regular fa-clock"></i> Pendente</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-50/80 transition">
+                        <td class="py-3 px-4 cursor-pointer hover:bg-brand-50/60 transition" onclick="abrirDetalheFormacao('${f.id}')" title="Ver detalhe completo">
+                            <span class="text-[11px] font-mono text-brand-600 font-bold block">${f.codigo}</span>
+                            <span class="font-bold text-slate-800 hover:text-brand-700">${f.titulo}</span>
+                        </td>
+                        <td class="py-3 px-4">
+                            <span class="font-medium text-slate-700 block">${f.area}</span>
+                            <span class="text-xs text-slate-400">${f.entidade}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="text-slate-700 font-medium block">${formatarDataExibicao(f.data)}</span>
+                            <span class="font-bold text-slate-900">${f.horas}h</span>
+                        </td>
+                        <td class="py-3 px-4 text-center font-bold text-slate-700">
+                            <i class="fa-solid fa-users text-slate-400 mr-1"></i> ${f.participantes.length}
+                        </td>
+                        <td class="py-3 px-4 text-center">
+                            <span class="px-2.5 py-1 rounded-lg text-xs ${badgeClass}">${f.estado}</span>
+                        </td>
+                        <td class="py-3 px-4 text-center">${eficaciaBadge}</td>
+                        <td class="py-3 px-4 text-right space-x-1">
+                            <button onclick="openISOModal('${f.id}')" class="p-1.5 text-slate-400 hover:text-amber-600 transition" title="Avaliar Eficácia ISO"><i class="fa-solid fa-award"></i></button>
+                            <button onclick="editFormacao('${f.id}')" class="p-1.5 text-slate-400 hover:text-brand-600 transition" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                            <button onclick="deleteFormacao('${f.id}')" class="p-1.5 text-slate-400 hover:text-red-600 transition" title="Remover"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function formatarDataExibicao(v) {
+            if (!v) return '—';
+            const s = v.toString();
+            const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+            return m ? m[1] : s;
+        }
+
+        function nomeDoParticipante(codigo) {
+            const chave = normId(codigo);
+            const c = dbColaboradores.find(cc => chavesColaborador(cc).has(chave));
+            return c ? c.nome : codigo;
+        }
+
+        function abrirDetalheFormacao(id) {
+            const f = dbFormacoes.find(x => x.id === id);
+            if (!f) return;
+            currentDetalheFormacaoId = id;
+
+            const iso = f.isoEficacia || {};
+            const nomesParticipantes = participantesDe(f).map(nomeDoParticipante);
+
+            const evidText = (f.evidencias || '').toString().trim();
+            const evidVal = /^https?:\/\//i.test(evidText)
+                ? `<a href="${evidText}" target="_blank" rel="noopener noreferrer" class="text-brand-600 hover:underline break-all">${evidText}</a>`
+                : (evidText || '—');
+
+            const badgeClass = f.estado === 'Concluída' ? 'bg-emerald-100 text-emerald-800'
+                : f.estado === 'Em Curso' ? 'bg-blue-100 text-blue-800'
+                : f.estado === 'Planeada' ? 'bg-amber-100 text-amber-800'
+                : 'bg-slate-100 text-slate-700';
+
+            const campos = [
+                { label: 'ID', valor: f.id },
+                { label: 'Código', valor: f.codigo || '—' },
+                { label: 'N.º Ação', valor: f.numAcao || '—' },
+                { label: 'Área', valor: f.area || '—' },
+                { label: 'Entidade', valor: f.entidade || '—' },
+                { label: 'Tipo', valor: f.tipo || '—' },
+                { label: 'Objetivo', valor: f.objetivo || '—', span: true },
+                { label: 'Data Prevista Início', valor: formatarDataExibicao(f.dataPrevistaInicio) },
+                { label: 'Data Prevista Fim', valor: formatarDataExibicao(f.dataPrevistaFim) },
+                { label: 'Data (Início Real)', valor: formatarDataExibicao(f.data) },
+                { label: 'Data Fim', valor: formatarDataExibicao(f.dataFim) },
+                { label: 'Ano', valor: f.ano || '—' },
+                { label: 'Horas', valor: (f.horas || 0) + 'h' },
+                { label: 'Custo', valor: f.custo ? f.custo.toLocaleString('pt-PT') + ' €' : '—' },
+                { label: 'Estado', valor: `<span class="px-2 py-0.5 rounded text-xs font-semibold ${badgeClass}">${f.estado}</span>` },
+                { label: 'N.º Formandos (declarado)', valor: f.numFormandos || '—' },
+                { label: 'Participantes', valor: nomesParticipantes.length ? (nomesParticipantes.join(', ') + ' (' + nomesParticipantes.length + ')') : '—', span: true },
+                { label: 'Critério de Eficácia', valor: f.criterioEficacia || '—', span: true },
+                { label: 'Eficácia Efetuada', valor: iso.efetuada ? 'Sim' : 'Não' },
+                { label: 'Nota de Eficácia', valor: (iso.nota != null && iso.nota !== '' && iso.nota !== '0') ? iso.nota + ' ★' : '—' },
+                { label: 'Resultado de Eficácia', valor: iso.resultado || '—' },
+                { label: 'Observações de Eficácia', valor: iso.observacoes || '—', span: true },
+                { label: 'Evidências', valor: evidVal, span: true },
+                { label: 'Atualizado a', valor: formatarDataExibicao(f.atualizadoA) }
+            ];
+
+            document.getElementById('detFormacaoCodigo').textContent = f.codigo || f.id;
+            document.getElementById('detFormacaoTitulo').textContent = f.titulo || '(sem título)';
+            document.getElementById('detFormacaoBody').innerHTML = campos.map(c => `
+                <div class="${c.span ? 'sm:col-span-2' : ''}">
+                    <p class="text-[10px] uppercase tracking-wide text-slate-400 font-semibold mb-0.5">${c.label}</p>
+                    <p class="text-slate-800 font-medium break-words">${c.valor}</p>
+                </div>
+            `).join('');
+
+            document.getElementById('modalDetalheFormacao').classList.remove('hidden');
+        }
+
+        function closeDetalheFormacaoModal() {
+            document.getElementById('modalDetalheFormacao').classList.add('hidden');
+        }
+
+        function abrirDetalheColaborador(id) {
+            const c = dbColaboradores.find(x => x.id === id);
+            if (!c) return;
+            currentDetalheColaboradorId = id;
+
+            const chaves = chavesColaborador(c);
+            const formacoesDele = dbFormacoes.filter(f => isConcluida(f.estado) && participantesDe(f).some(p => chaves.has(p)));
+
+            const totalHoras = calculateHorasPorColaborador(c.id, 'ALL');
+            const totalFormacoes = formacoesDele.length;
+
+            // ---- Por ano ----
+            const anos = [...new Set(formacoesDele.map(f => anoDaFormacao(f)).filter(Boolean))].sort();
+            const linhasAno = anos.map(ano => {
+                const formacoesAno = formacoesDele.filter(f => anoDaFormacao(f) === ano);
+                const horasAno = calculateHorasPorColaborador(c.id, new Set([ano]));
+                const cumprido = horasAno >= 40;
+                const badge = cumprido
+                    ? `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check"></i> 40h Cumpridas</span>`
+                    : `<span class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800"><i class="fa-solid fa-triangle-exclamation"></i> Faltam ${Math.max(0, 40 - horasAno)}h</span>`;
+                return `<tr class="border-b border-slate-100 last:border-0">
+                    <td class="py-2 pr-2 font-semibold text-slate-700">${ano}</td>
+                    <td class="py-2 pr-2 text-slate-600">${horasAno}h</td>
+                    <td class="py-2 pr-2 text-slate-500">${formacoesAno.length}</td>
+                    <td class="py-2 text-right">${badge}</td>
+                </tr>`;
+            }).join('') || `<tr><td colspan="4" class="py-3 text-center text-slate-400 text-xs">Sem formações concluídas registadas.</td></tr>`;
+
+            // ---- Por área ----
+            const porArea = {};
+            formacoesDele.forEach(f => {
+                const area = f.area || 'Sem Área';
+                porArea[area] = (porArea[area] || 0) + parseHoras(f.horas);
+            });
+            const areasOrdenadas = Object.entries(porArea).sort((a, b) => b[1] - a[1]);
+            const maxAreaHoras = areasOrdenadas.length ? areasOrdenadas[0][1] : 1;
+            const linhasArea = areasOrdenadas.map(([area, h]) => {
+                const pct = Math.max(4, Math.round((h / maxAreaHoras) * 100));
+                return `<div class="space-y-1">
+                    <div class="flex justify-between text-xs">
+                        <span class="text-slate-600 font-medium">${area}</span>
+                        <span class="text-slate-800 font-bold">${h}h</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-1.5">
+                        <div class="bg-brand-600 h-1.5 rounded-full" style="width:${pct}%"></div>
+                    </div>
+                </div>`;
+            }).join('') || `<p class="text-center text-slate-400 text-xs py-3">Sem dados de área.</p>`;
+
+            // ---- Histórico de formações ----
+            const historico = [...formacoesDele].sort((a, b) => (b.data || '').localeCompare(a.data || '')).map(f => `
+                <div class="flex items-center justify-between gap-3 py-2 border-b border-slate-100 last:border-0 cursor-pointer hover:bg-slate-50 -mx-2 px-2 rounded-lg" onclick="closeDetalheColaboradorModal(); abrirDetalheFormacao('${f.id}');">
+                    <div class="min-w-0">
+                        <p class="text-xs font-mono text-brand-600 font-bold">${f.codigo || f.id}</p>
+                        <p class="text-sm font-semibold text-slate-800 truncate">${f.titulo || '(sem título)'}</p>
+                    </div>
+                    <div class="text-right shrink-0">
+                        <p class="text-xs text-slate-500">${formatarDataExibicao(f.data)}</p>
+                        <p class="text-sm font-bold text-slate-700">${parseHoras(f.horas)}h</p>
+                    </div>
+                </div>
+            `).join('') || `<p class="text-center text-slate-400 text-xs py-4">Sem formações concluídas.</p>`;
+
+            document.getElementById('detColabNome').textContent = c.nome;
+            document.getElementById('detColabMec').textContent = 'Mec. #' + c.numMecanografico;
+            document.getElementById('detColabCargo').textContent = [c.departamento, c.cargo].filter(Boolean).join(' — ') || '—';
+            document.getElementById('detColabEmail').textContent = c.email || '—';
+            document.getElementById('detColabAdmissao').textContent = formatarDataExibicao(c.dataAdmissao);
+            document.getElementById('detColabTotalHoras').textContent = totalHoras + 'h';
+            document.getElementById('detColabTotalFormacoes').textContent = totalFormacoes;
+            document.getElementById('detColabAnosAtivos').textContent = anos.length;
+            document.getElementById('detColabPorAno').innerHTML = linhasAno;
+            document.getElementById('detColabPorArea').innerHTML = linhasArea;
+            document.getElementById('detColabHistorico').innerHTML = historico;
+
+            document.getElementById('modalDetalheColaborador').classList.remove('hidden');
+        }
+
+        function closeDetalheColaboradorModal() {
+            document.getElementById('modalDetalheColaborador').classList.add('hidden');
+        }
+
+        function renderISOAuditTable() {
+            const tbody = document.getElementById('isoEficaciaTableBody');
+            const formacoesConcluidas = dbFormacoes.filter(f => f.estado === "Concluída" && formacaoNoFiltro(f));
+
+            if (formacoesConcluidas.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-6 text-slate-400">Sem ações concluídas para avaliação.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = formacoesConcluidas.map(f => {
+                const iso = f.isoEficacia || {};
+                const isDone = iso.efetuada;
+
+                return `
+                    <tr class="hover:bg-slate-50">
+                        <td class="py-3 px-3 font-semibold text-slate-800">
+                            <span class="text-[10px] text-brand-600 block">${f.codigo}</span>
+                            ${f.titulo}
+                        </td>
+                        <td class="py-3 px-3 text-slate-600">${f.data}</td>
+                        <td class="py-3 px-3 text-center">
+                            ${isDone 
+                                ? `<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 font-semibold rounded text-[11px]">Concluída</span>`
+                                : `<span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-semibold rounded text-[11px]">Pendente</span>`}
+                        </td>
+                        <td class="py-3 px-3 text-center">
+                            ${isDone ? `<span class="font-bold text-amber-600">${iso.nota} ★</span> <span class="text-slate-500 text-[11px] block">(${iso.observacoes || 'Sem notas'})</span>` : '-'}
+                        </td>
+                        <td class="py-3 px-3 text-right">
+                            <button onclick="openISOModal('${f.id}')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-white rounded text-[11px] font-medium transition">
+                                ${isDone ? 'Editar Avaliação' : 'Avaliar Agora'}
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAuditAlerts() {
+            const container = document.getElementById('auditAlertsContainer');
+            if (!container) return;
+
+            const alertas = [];
+
+            // Check non-compliant workers
+            const pendentesLegal = dbColaboradores.filter(c => calculateHorasPorColaborador(c.id) < 40);
+            if (pendentesLegal.length > 0) {
+                alertas.push({
+                    type: 'warning',
+                    icon: 'fa-triangle-exclamation text-amber-600',
+                    title: `${pendentesLegal.length} Colaboradores abaixo do limite legal (40h)`,
+                    desc: 'Necessário agendar formações contínuas antes do encerramento do ciclo.'
+                });
+            } else {
+                alertas.push({
+                    type: 'success',
+                    icon: 'fa-circle-check text-emerald-600',
+                    title: '100% de Cumprimento Legal Art. 131.º',
+                    desc: 'Todos os colaboradores registam pelo menos 40 horas no ano.'
+                });
+            }
+
+            // Check ISO Effectiveness pending
+            const pendentesEficacia = dbFormacoes.filter(f => f.estado === "Concluída" && (!f.isoEficacia || !f.isoEficacia.efetuada));
+            if (pendentesEficacia.length > 0) {
+                alertas.push({
+                    type: 'warning',
+                    icon: 'fa-clock text-amber-600',
+                    title: `${pendentesEficacia.length} Formações aguardam Avaliação de Eficácia`,
+                    desc: 'Requisito ISO 9001 Cláusula 7.2 necessita de validação das chefias.'
+                });
+            } else {
+                alertas.push({
+                    type: 'success',
+                    icon: 'fa-shield-halved text-emerald-600',
+                    title: 'Avaliações ISO 9001 em dia',
+                    desc: 'Todas as ações concluídas foram avaliadas quanto ao impacto.'
+                });
+            }
+
+            container.innerHTML = alertas.map(a => `
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-start gap-3">
+                    <i class="fa-solid ${a.icon} text-base mt-0.5"></i>
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-xs">${a.title}</h4>
+                        <p class="text-[11px] text-slate-500 mt-0.5">${a.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openColaboradorModal(id = null) {
+            const form = document.getElementById('formColaborador');
+            form.reset();
+            document.getElementById('colabId').value = '';
+            document.getElementById('modalColaboradorTitle').textContent = 'Adicionar Colaborador';
+
+            if (id) {
+                const colab = dbColaboradores.find(c => c.id === id);
+                if (colab) {
+                    document.getElementById('colabId').value = colab.id;
+                    document.getElementById('colabNum').value = colab.numMecanografico;
+                    document.getElementById('colabNome').value = colab.nome;
+                    document.getElementById('colabDept').value = colab.departamento;
+                    document.getElementById('colabCargo').value = colab.cargo;
+                    document.getElementById('colabEmail').value = colab.email;
+                    document.getElementById('modalColaboradorTitle').textContent = 'Editar Colaborador';
+                }
+            }
+
+            document.getElementById('modalColaborador').classList.remove('hidden');
+        }
+
+        function closeColaboradorModal() {
+            document.getElementById('modalColaborador').classList.add('hidden');
+        }
+
+        function saveColaborador(e) {
+            e.preventDefault();
+            const id = document.getElementById('colabId').value;
+            const num = document.getElementById('colabNum').value;
+            const nome = document.getElementById('colabNome').value;
+            const dept = document.getElementById('colabDept').value;
+            const cargo = document.getElementById('colabCargo').value;
+            const email = document.getElementById('colabEmail').value;
+
+            let savedId = id;
+            if (id) {
+                const index = dbColaboradores.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    dbColaboradores[index] = { ...dbColaboradores[index], numMecanografico: num, nome, departamento: dept, cargo, email };
+                }
+            } else {
+                savedId = nextId('C', dbColaboradores);
+                dbColaboradores.push({ id: savedId, numMecanografico: num, nome, departamento: dept, cargo, email, dataAdmissao: new Date().toISOString().split('T')[0] });
+            }
+
+            saveToStorage();
+            closeColaboradorModal();
+            renderAll();
+            showToast("Colaborador guardado com sucesso!", "success");
+            pushRecord('Colaboradores', colabToRecord(dbColaboradores.find(c => c.id === savedId)));
+        }
+
+        function editColaborador(id) {
+            openColaboradorModal(id);
+        }
+
+        function deleteColaborador(id) {
+            if (confirm("Tem a certeza que deseja remover este colaborador?")) {
+                dbColaboradores = dbColaboradores.filter(c => c.id !== id);
+                saveToStorage();
+                renderAll();
+                showToast("Colaborador removido.", "info");
+                pushDelete('Colaboradores', id);
+            }
+        }
+
+        function openFormacaoModal(id = null) {
+            const form = document.getElementById('formFormacao');
+            form.reset();
+            document.getElementById('formacaoId').value = '';
+            document.getElementById('modalFormacaoTitle').textContent = 'Registar Nova Ação de Formação';
+
+            // Populate checkboxes
+            const container = document.getElementById('formParticipantesList');
+            container.innerHTML = dbColaboradores.map(c => `
+                <label class="flex items-center gap-2 cursor-pointer hover:bg-slate-100 p-1 rounded">
+                    <input type="checkbox" name="participanteCheck" value="${c.id}" class="rounded text-brand-600 focus:ring-brand-500">
+                    <span class="font-medium text-slate-800">${c.nome}</span>
+                    <span class="text-slate-400 text-[11px]">(${c.departamento})</span>
+                </label>
+            `).join('');
+
+            if (id) {
+                const f = dbFormacoes.find(item => item.id === id);
+                if (f) {
+                    document.getElementById('formacaoId').value = f.id;
+                    document.getElementById('formCodigo').value = f.codigo;
+                    document.getElementById('formTitulo').value = f.titulo;
+                    document.getElementById('formArea').value = f.area;
+                    document.getElementById('formEntidade').value = f.entidade;
+                    document.getElementById('formTipo').value = f.tipo;
+                    document.getElementById('formData').value = f.data;
+                    document.getElementById('formHoras').value = f.horas;
+                    document.getElementById('formEstado').value = f.estado;
+                    document.getElementById('formCusto').value = f.custo;
+                    document.getElementById('formEvidencias').value = f.evidencias || '';
+                    document.getElementById('formCriterioEficacia').value = f.criterioEficacia || '';
+
+                    // Check participants
+                    const checkboxes = document.getElementsByName('participanteCheck');
+                    checkboxes.forEach(cb => {
+                        if (f.participantes.includes(cb.value)) cb.checked = true;
+                    });
+
+                    document.getElementById('modalFormacaoTitle').textContent = 'Editar Ação de Formação';
+                }
+            } else {
+                document.getElementById('formData').value = new Date().toISOString().split('T')[0];
+            }
+
+            document.getElementById('modalFormacao').classList.remove('hidden');
+        }
+
+        function closeFormacaoModal() {
+            document.getElementById('modalFormacao').classList.add('hidden');
+        }
+
+        function saveFormacao(e) {
+            e.preventDefault();
+            const id = document.getElementById('formacaoId').value;
+            const codigo = document.getElementById('formCodigo').value;
+            const titulo = document.getElementById('formTitulo').value;
+            const area = document.getElementById('formArea').value;
+            const entidade = document.getElementById('formEntidade').value;
+            const tipo = document.getElementById('formTipo').value;
+            const data = document.getElementById('formData').value;
+            const horas = parseFloat(document.getElementById('formHoras').value);
+            const estado = document.getElementById('formEstado').value;
+            const custo = parseFloat(document.getElementById('formCusto').value || 0);
+            const evidencias = document.getElementById('formEvidencias').value;
+            const criterioEficacia = document.getElementById('formCriterioEficacia').value;
+
+            const checkboxes = document.getElementsByName('participanteCheck');
+            const selecionados = [];
+            checkboxes.forEach(cb => { if (cb.checked) selecionados.push(cb.value); });
+
+            const anosSel = anosSelecionadosOrdenados();
+            const anoFallback = (!activeYears.has('ALL') && anosSel.length === 1) ? anosSel[0] : String(new Date().getFullYear());
+            const ano = data ? data.split('-')[0] : anoFallback;
+
+            let savedId = id;
+            if (id) {
+                const index = dbFormacoes.findIndex(f => f.id === id);
+                if (index !== -1) {
+                    dbFormacoes[index] = {
+                        ...dbFormacoes[index],
+                        codigo, titulo, area, entidade, tipo, data, ano, horas, estado, custo, evidencias, criterioEficacia, participantes: selecionados
+                    };
+                }
+            } else {
+                savedId = nextId('F', dbFormacoes);
+                dbFormacoes.push({
+                    id: savedId, codigo, titulo, area, entidade, tipo, data, ano, horas, estado, custo, evidencias, criterioEficacia, participantes: selecionados,
+                    isoEficacia: { efetuada: false, nota: "0", resultado: "PENDENTE", observacoes: "" }
+                });
+            }
+
+            saveToStorage();
+            closeFormacaoModal();
+            renderAll();
+            showToast("Ação de Formação guardada com sucesso!", "success");
+            pushRecord('Formacoes', formacaoToRecord(dbFormacoes.find(f => f.id === savedId)));
+        }
+
+        function editFormacao(id) {
+            openFormacaoModal(id);
+        }
+
+        function deleteFormacao(id) {
+            if (confirm("Tem a certeza que pretende remover esta formação?")) {
+                dbFormacoes = dbFormacoes.filter(f => f.id !== id);
+                saveToStorage();
+                renderAll();
+                showToast("Formação eliminada.", "info");
+                pushDelete('Formacoes', id);
+            }
+        }
+
+        function openISOModal(formacaoId) {
+            const f = dbFormacoes.find(item => item.id === formacaoId);
+            if (!f) return;
+
+            document.getElementById('isoFormacaoId').value = f.id;
+            document.getElementById('isoFormTitulo').textContent = `${f.codigo} - ${f.titulo}`;
+
+            const iso = f.isoEficacia || {};
+            document.getElementById('isoEfetuada').value = iso.resultado === "SIM" ? "SIM" : (iso.resultado === "PARCIAL" ? "PARCIAL" : "NAO");
+            document.getElementById('isoNota').value = iso.nota || "5";
+            document.getElementById('isoObservacoes').value = iso.observacoes || "";
+
+            document.getElementById('modalISO').classList.remove('hidden');
+        }
+
+        function closeISOModal() {
+            document.getElementById('modalISO').classList.add('hidden');
+        }
+
+        function saveISOEficacia(e) {
+            e.preventDefault();
+            const formacaoId = document.getElementById('isoFormacaoId').value;
+            const res = document.getElementById('isoEfetuada').value;
+            const nota = document.getElementById('isoNota').value;
+            const obs = document.getElementById('isoObservacoes').value;
+
+            const index = dbFormacoes.findIndex(f => f.id === formacaoId);
+            if (index !== -1) {
+                dbFormacoes[index].isoEficacia = {
+                    efetuada: true,
+                    resultado: res,
+                    nota: nota,
+                    observacoes: obs
+                };
+            }
+
+            saveToStorage();
+            closeISOModal();
+            renderAll();
+            showToast("Avaliação da Eficácia ISO 9001 registada com sucesso!", "success");
+            if (index !== -1) pushRecord('Formacoes', formacaoToRecord(dbFormacoes[index]));
+        }
+
+        function fetchGoogleSheetData() {
+            let url = document.getElementById('sheetUrlInput').value.trim();
+            if (!url) {
+                showToast("Por favor introduza um URL do Google Sheets.", "warning");
+                return;
+            }
+
+            // Convert pubhtml to direct csv export url if applicable
+            if (url.includes('pubhtml')) {
+                url = url.replace('pubhtml', 'pub').replace('gid=', 'output=csv&gid=');
+                if (!url.includes('output=csv')) {
+                    url += (url.includes('?') ? '&' : '?') + 'output=csv';
+                }
+            }
+
+            showToast("A carregar dados do Google Sheets...", "info");
+
+            Papa.parse(url, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if (results.data && results.data.length > 0) {
+                        parseGoogleSheetRows(results.data);
+                        showToast(`Sincronizado! ${results.data.length} linhas processadas.`, "success");
+                    } else {
+                        showToast("Não foram encontrados dados no ficheiro CSV.", "warning");
+                    }
+                },
+                error: function(err) {
+                    showToast("Erro ao aceder ao Google Sheets. Verifique a permissão de publicação.", "error");
+                    console.error(err);
+                }
+            });
+        }
+
+        function parseGoogleSheetRows(rows) {
+            // Smart column mapper for PT/EN HR Sheet headers
+            rows.forEach((row, idx) => {
+                const keys = Object.keys(row);
+                const getVal = (...possibleKeys) => {
+                    for (let p of possibleKeys) {
+                        const foundKey = keys.find(k => k.toLowerCase().includes(p.toLowerCase()));
+                        if (foundKey && row[foundKey]) return row[foundKey].toString().trim();
+                    }
+                    return '';
+                };
+
+                const nome = getVal('nome', 'colaborador', 'funcionario', 'trabalhador');
+                const numMec = getVal('mec', 'num', 'id', 'nif') || (idx + 200).toString();
+                const dept = getVal('departamento', 'area', 'seccao') || 'Operações & Produção';
+                const cargo = getVal('cargo', 'funcao', 'função') || 'Técnico';
+                const email = getVal('email', 'correio') || `${nome.toLowerCase().replace(/\s+/g, '.')}@empresa.pt`;
+
+                if (nome && !dbColaboradores.some(c => c.nome.toLowerCase() === nome.toLowerCase())) {
+                    dbColaboradores.push({
+                        id: 'C_GS_' + idx,
+                        numMecanografico: numMec,
+                        nome: nome,
+                        departamento: dept,
+                        cargo: cargo,
+                        email: email,
+                        dataAdmissao: '2022-01-01'
+                    });
+                }
+
+                // Check for training records in the same row
+                const formTitulo = getVal('formacao', 'formação', 'curso', 'titulo', 'ação');
+                const horas = parseFloat(getVal('horas', 'duracao', 'duração') || 8);
+                const data = getVal('data', 'data inicio', 'data_inicio') || '2026-03-15';
+                const estado = getVal('estado', 'status', 'concretizacao') || 'Concluída';
+
+                if (formTitulo) {
+                    const colabMatch = dbColaboradores.find(c => c.nome.toLowerCase() === nome.toLowerCase());
+                    const colabId = colabMatch ? colabMatch.id : 'C001';
+
+                    dbFormacoes.push({
+                        id: 'F_GS_' + idx,
+                        codigo: `GS-2026-${idx+1}`,
+                        titulo: formTitulo,
+                        area: getVal('area', 'tema') || 'Qualidade & ISO',
+                        entidade: getVal('entidade', 'empresa', 'formador') || 'Entidade Externa',
+                        tipo: 'Externa Certificada DGERT',
+                        data: data,
+                        ano: data.includes('2025') ? '2025' : '2026',
+                        horas: horas,
+                        custo: 150,
+                        estado: estado,
+                        participantes: [colabId],
+                        evidencias: '',
+                        isoEficacia: { efetuada: true, nota: "4", resultado: "SIM", observacoes: "Importado via Google Sheets" }
+                    });
+                }
+            });
+
+            saveToStorage();
+            renderAll();
+        }
+
+        function resetToSampleData() {
+            if (confirm("Deseja repor os dados de exemplo predefinidos?")) {
+                dbColaboradores = [...DEFAULT_COLABORADORES];
+                dbFormacoes = [...DEFAULT_FORMACOES];
+                saveToStorage();
+                renderAll();
+                showToast("Dados de demonstração restaurados.", "info");
+            }
+        }
+
+        function saveAppsScriptUrl() {
+            const input = document.getElementById('webAppUrlInput');
+            const url = sanitizeWebAppUrl(input.value);
+            if (!url) {
+                showToast("URL inválido. Deve ser o endereço completo, a começar por https:// e a terminar em /exec.", "error");
+                return;
+            }
+            input.value = url;
+            localStorage.setItem('tms_appscript_url', url);
+            TMS_CONFIG.webAppUrl = url;
+            showToast("Endpoint do Google Apps Script guardado!", "success");
+            syncFromServer();
+        }
+
+        function toggleScriptCodeModal() {
+            document.getElementById('modalScriptCode').classList.toggle('hidden');
+        }
+
+        function copyAppsScriptCode() {
+            const text = document.getElementById('appsScriptTextarea').value;
+            navigator.clipboard.writeText(text).then(() => {
+                showToast("Código copiado para a área de transferência!", "success");
+            }).catch(() => {
+                showToast("Selecione e copie manualmente.", "info");
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            let bgColor = 'bg-slate-900 text-white';
+            if (type === 'success') bgColor = 'bg-emerald-600 text-white';
+            if (type === 'warning') bgColor = 'bg-amber-600 text-white';
+            if (type === 'error') bgColor = 'bg-red-600 text-white';
+
+            const toast = document.createElement('div');
+            toast.className = `p-3 px-4 rounded-xl shadow-lg text-xs font-semibold flex items-center justify-between gap-3 ${bgColor} transition transform duration-300`;
+            toast.innerHTML = `<span>${message}</span> <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100">&times;</button>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, 4000);
+        }
+    </script>
+</body>
+</html>
