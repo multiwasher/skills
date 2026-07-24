@@ -203,6 +203,10 @@
                         <span>Meta Anual: <span id="kpiMetaHoras" class="font-semibold text-slate-700">0h</span></span>
                         <span id="kpiHorasPercent" class="font-bold text-emerald-600">0%</span>
                     </div>
+                    <div class="mt-2 pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-500">
+                        <span>Taxa de Conclusão: <span id="kpiTaxaConclusaoContagem" class="font-semibold text-slate-700">0/0</span></span>
+                        <span id="kpiTaxaConclusaoPercent" class="font-bold text-brand-600">0%</span>
+                    </div>
                 </div>
 
                 <!-- Card 2: Concretização Artigo 131.º CT -->
@@ -1522,6 +1526,13 @@ function doPost(e) {
 
             const percentMeta = metaHoras > 0 ? Math.min(100, Math.round((totalHoras / metaHoras) * 100)) : 0;
             document.getElementById('kpiHorasPercent').textContent = `${percentMeta}% cumprido`;
+
+            // Taxa de conclusão: concluídas vs. total planeado (planeadas + concluídas)
+            const totalPlaneadas = formacoesAno.length;
+            const totalConcluidas = formacoesConcluidas.length;
+            const taxaConclusao = totalPlaneadas > 0 ? Math.round((totalConcluidas / totalPlaneadas) * 100) : 0;
+            document.getElementById('kpiTaxaConclusaoContagem').textContent = `${totalConcluidas}/${totalPlaneadas}`;
+            document.getElementById('kpiTaxaConclusaoPercent').textContent = `${taxaConclusao}%`;
 
             // Artigo 131 Compliance (% with >= 40h) + sinalética de conformidade
             const tituloLegalEl = document.getElementById('kpiConcretizacaoLegal');
