@@ -69,7 +69,7 @@
                     <h1 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                         Matriz de Talento 9-Box
                         <span id="syncBadge" class="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-                            <i class="fa-solid fa-table"></i> Google Sheets Conectado
+                            <i class="fa-solid fa-table"></i> Google Sheets (BOX)
                         </span>
                     </h1>
                     <p class="text-xs text-slate-500 dark:text-slate-400">Mapeamento Estratégico de Desempenho vs Potencial • Somengil</p>
@@ -78,13 +78,13 @@
 
             <!-- Header Actions -->
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <a href="index.html" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition shadow-sm flex items-center gap-2" title="Voltar ao início">
-                    <i class="fa-solid fa-house"></i>
-                    <span class="hidden sm:inline">Início</span>
-                </a>
-                <button onclick="openSheetsModal()" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2">
-                    <i class="fa-solid fa-file-excel"></i>
-                    <span class="hidden sm:inline">Google Sheets</span>
+                <button onclick="saveToGoogleSheets()" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2" title="Gravar dados na aba BOX do Google Sheets">
+                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                    <span class="hidden sm:inline">Gravar no Sheets</span>
+                </button>
+                <button onclick="openSheetsModal()" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
+                    <span class="hidden sm:inline">Configurar Sheet</span>
                 </button>
                 <button onclick="openAddModal()" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-plus"></i>
@@ -197,7 +197,6 @@
 
         <!-- TAB 1: 9-BOX VISUAL GRID VIEW -->
         <div id="gridView" class="block space-y-4">
-            
             <div class="overflow-x-auto pb-4">
                 <div class="min-w-[850px] bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                     
@@ -253,7 +252,6 @@
                             <p class="text-[10px] text-emerald-700 dark:text-emerald-400 mt-2 italic truncate font-semibold">Estratégia: Retenção & Plano de Sucessão</p>
                         </div>
 
-
                         <!-- ROW 2 (Potencial Médio = 2) -->
                         <!-- Box Q4 -->
                         <div id="box-4" onclick="filterByBox(4)" class="p-3.5 rounded-xl border-2 border-orange-200 dark:border-orange-900/40 bg-orange-50/50 dark:bg-orange-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
@@ -293,7 +291,6 @@
                             </div>
                             <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-2 italic truncate">Estratégia: Projetos Transversais</p>
                         </div>
-
 
                         <!-- ROW 3 (Potencial Baixo = 1) -->
                         <!-- Box Q1 -->
@@ -353,7 +350,22 @@
         </div>
 
         <!-- TAB 2: DATA TABLE VIEW -->
-        <div id="tableView" class="hidden">
+        <div id="tableView" class="hidden space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <div class="flex items-center gap-2 text-xs font-medium text-slate-600 dark:text-slate-300">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span>Tabela sincronizada para gravação no separador <b>BOX</b> do Google Sheets</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="copyTableForSheets()" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-copy text-blue-500"></i> Copiar para Colar no Sheets
+                    </button>
+                    <button onclick="saveToGoogleSheets()" class="px-3.5 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Gravar na Aba BOX
+                    </button>
+                </div>
+            </div>
+
             <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-sm">
@@ -381,10 +393,10 @@
 
     <!-- GOOGLE SHEETS CONFIGURATION MODAL -->
     <div id="sheetsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-xl w-full p-6 space-y-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-xl w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto custom-scrollbar">
             <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
                 <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Conectar com Google Sheets
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Conectar & Gravar no Google Sheets
                 </h3>
                 <button onclick="closeSheetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                     <i class="fa-solid fa-xmark text-xl"></i>
@@ -392,20 +404,74 @@
             </div>
 
             <div class="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-                <p>Insira o ID da Folha de Cálculo do Google Sheets para ler os dados em tempo real:</p>
-
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Google Sheet ID ou URL Completa</label>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Google Sheet ID ou URL</label>
                     <input type="text" id="sheetIdInput" placeholder="ex: 139l3QsIT6M9w5ZsMsKqJRl_vP3SOmevYs0ajCOR9_ig" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500">
-                    <p class="text-[11px] text-slate-400 mt-1">Garantir que a partilha no Google Sheets está como: <b>"Qualquer pessoa com o link pode ver"</b>.</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Definido para a sua folha de cálculo Somengil.</p>
                 </div>
 
-                <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-900/50 text-xs text-blue-800 dark:text-blue-300 space-y-1">
-                    <p class="font-bold"><i class="fa-solid fa-circle-info mr-1"></i> Separadores Detetados Automaticamente:</p>
-                    <ul class="list-disc list-inside space-y-0.5 opacity-90">
-                        <li><b>TEAM</b> (Dados dos colaboradores: ID, Nome, Profissao, etc.)</li>
-                        <li><b>AVALIACOES</b> (Notas e PDI: ID, Desempenho, Potencial, PDI_Acoes, etc.)</li>
-                    </ul>
+                <!-- Guidance Box for CORS / Fetch permissions -->
+                <div class="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-800 text-xs space-y-1 text-amber-800 dark:text-amber-300">
+                    <p class="font-bold flex items-center gap-1.5"><i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Como resolver "Failed to fetch":</p>
+                    <ol class="list-decimal list-inside space-y-1 text-[11px] text-amber-900 dark:text-amber-200 pl-1">
+                        <li>Abra a sua folha no Google Sheets.</li>
+                        <li>Clique em <b>Partilhar</b> (canto superior direito).</li>
+                        <li>Em "Acesso geral", mude de <i>Restrito</i> para <b>"Qualquer pessoa com o link"</b> (função: <i>Leitor</i>).</li>
+                        <li>Clique em <b>Concluído</b> e tente sincronizar novamente.</li>
+                    </ol>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">URL do Google Apps Script (Para Gravação Automática)</label>
+                    <input type="text" id="appsScriptUrlInput" placeholder="https://script.google.com/macros/s/AKfycbx9QAFDVH4IQhrs4lyQdh0MQa0u9WwBfaI9PIM9OXmSqdatnLqf-rOLLQBN5e_PnGC6yQ/exec" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500">
+                    <p class="text-[11px] text-slate-400 mt-1">URL da Web App criada no Google Apps Script do Sheets.</p>
+                </div>
+
+                <div class="p-3 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                    <p class="font-bold text-slate-800 dark:text-slate-200 flex items-center justify-between">
+                        <span><i class="fa-solid fa-code text-emerald-600 mr-1"></i> Código Google Apps Script (Atualizado com doGet & doPost):</span>
+                        <button onclick="copyAppsScriptCode()" class="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded hover:bg-emerald-700 transition">Copiar Código</button>
+                    </p>
+                    <pre id="scriptCodeBlock" class="p-2 bg-slate-900 text-emerald-400 rounded text-[11px] font-mono overflow-x-auto whitespace-pre">
+function doGet(e) {
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById('139l3QsIT6M9w5ZsMsKqJRl_vP3SOmevYs0ajCOR9_ig');
+    var sheet = ss.getSheetByName('BOX') || ss.getSheetByName('TEAM');
+    var data = sheet.getDataRange().getValues();
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", data: data }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function doPost(e) {
+  try {
+    if (!e || !e.postData) {
+      return ContentService.createTextOutput(JSON.stringify({ status: "info", message: "Esta função é acionada via pedido HTTP POST na aplicação Web (não no botão Executar do editor)." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    var ss = SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById('139l3QsIT6M9w5ZsMsKqJRl_vP3SOmevYs0ajCOR9_ig');
+    var sheet = ss.getSheetByName('BOX');
+    if (!sheet) { sheet = ss.insertSheet('BOX'); }
+    var payload = JSON.parse(e.postData.contents);
+    var rows = payload.rows || payload;
+    sheet.clear();
+    sheet.appendRow(["Colaborador", "Função / Dept.", "Desempenho", "Potencial", "Quadrante 9-Box", "Plano de Desenvolvimento (PDI)", "Prazo / Status", "Ações"]);
+    if (Array.isArray(rows)) {
+      rows.forEach(function(r) { sheet.appendRow(r); });
+    }
+    return ContentService.createTextOutput(JSON.stringify({ status: "success" }))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400">
+                        <b>Nota sobre o erro no Apps Script:</b> Não prima "Executar" no editor do Google, pois dará erro por falta de dados de teste (event <i>e</i>). Após colar este código, clique em <b>Implantar &gt; Nova Implantação &gt; Aplicação Web (Acesso: Qualquer Pessoa)</b> e cole o URL gerado acima.
+                    </p>
                 </div>
             </div>
 
@@ -414,7 +480,7 @@
                 <div class="flex gap-2">
                     <button onclick="closeSheetsModal()" class="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Cancelar</button>
                     <button onclick="saveSheetsConfig()" class="px-5 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-2">
-                        <i class="fa-solid fa-sync"></i> Sincronizar Agora
+                        <i class="fa-solid fa-sync"></i> Guardar Definições
                     </button>
                 </div>
             </div>
@@ -424,7 +490,6 @@
     <!-- ADD/EDIT EMPLOYEE MODAL -->
     <div id="employeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
-            
             <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 z-10">
                 <h3 id="modalTitle" class="text-lg font-bold text-slate-900 dark:text-white">Adicionar Colaborador</h3>
                 <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
@@ -461,12 +526,6 @@
                         <input type="text" id="empEvaluator" placeholder="ex: Luís Pereira" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
                     </div>
 
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nível Habilitações</label>
-                        <input type="text" id="empEdu" placeholder="ex: 5" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
-                    </div>
-
-                    <!-- Scores -->
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Desempenho Atual (Eixo X)</label>
                         <select id="empPerformance" onchange="updateCalculatedBox()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
@@ -634,6 +693,7 @@
         ];
 
         let activeSheetId = localStorage.getItem('talent_9box_sheet_id') || DEFAULT_SHEET_ID;
+        let appsScriptUrl = localStorage.getItem('talent_9box_script_url') || "";
         let employees = JSON.parse(localStorage.getItem('talent_9box_employees_v3')) || INITIAL_TEAM_RAW;
 
         function getQuadrantInfo(perf, pot) {
@@ -641,7 +701,6 @@
             return QUADRANT_RULES[key] || { q: 0, name: "Desconhecido", strategy: "-", bg: "bg-slate-400", border: "border-slate-400", text: "text-slate-600" };
         }
 
-        // Auto-detect Department based on Job Title / Profession
         function inferDepartment(role) {
             if (!role) return "Geral";
             const upper = role.toUpperCase();
@@ -674,7 +733,6 @@
             }, 3500);
         }
 
-        // Parse CSV string safely handling quoted text
         function parseCSV(text) {
             const lines = text.split(/\r\n|\n/);
             const result = [];
@@ -701,10 +759,20 @@
 
         async function fetchSheetCSV(sheetId, tabName) {
             const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`Falha ao carregar separador ${tabName}`);
-            const text = await res.text();
-            return parseCSV(text);
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error(`Falha ao carregar separador ${tabName} (Status: ${res.status})`);
+                const text = await res.text();
+                if (text.includes('<!DOCTYPE html>') || text.includes('google-site-verification')) {
+                    throw new Error(`A folha está privada. Defina o acesso como "Qualquer pessoa com o link".`);
+                }
+                return parseCSV(text);
+            } catch (err) {
+                if (err.name === 'TypeError' || err.message.includes('Failed to fetch')) {
+                    throw new Error(`Sem acesso à folha Google Sheets. Verifique se a folha tem acesso "Qualquer pessoa com o link" (Leitor).`);
+                }
+                throw err;
+            }
         }
 
         async function syncWithGoogleSheets() {
@@ -712,13 +780,109 @@
             spin.classList.add('fa-spin');
 
             try {
-                // Fetch TEAM tab
-                const teamData = await fetchSheetCSV(activeSheetId, 'TEAM');
-                if (!teamData || teamData.length < 2) {
-                    throw new Error("Separador TEAM vazio ou inválido.");
+                // 1. Tentar primeiro via Apps Script Web App (se configurado)
+                if (appsScriptUrl) {
+                    try {
+                        const res = await fetch(appsScriptUrl);
+                        const json = await res.json();
+                        if (json && json.status === "success" && json.data && json.data.length >= 2) {
+                            const rows = json.data;
+                            const newEmpList = [];
+                            for (let i = 1; i < rows.length; i++) {
+                                const r = rows[i];
+                                if (!r || !r[0]) continue;
+                                const colaborador = r[0] || '';
+                                const funcDept = r[1] || '';
+                                const perf = parseInt(r[2]) || 2;
+                                const pot = parseInt(r[3]) || 2;
+                                const pdi = r[5] || '';
+                                const prazoStatus = r[6] || '';
+
+                                const partsFD = funcDept.split('/');
+                                const role = partsFD[0] ? partsFD[0].trim() : 'Colaborador';
+                                const dept = partsFD[1] ? partsFD[1].trim() : inferDepartment(role);
+
+                                const partsPS = prazoStatus.split('-');
+                                const deadline = partsPS[0] ? partsPS[0].trim() : 'T3 2026';
+                                const status = partsPS[1] ? partsPS[1].trim() : 'Em Curso';
+
+                                newEmpList.push({
+                                    id: `${i}`,
+                                    name: colaborador,
+                                    role: role,
+                                    dept: dept,
+                                    perf: perf,
+                                    pot: pot,
+                                    pdi: pdi,
+                                    deadline: deadline,
+                                    status: status
+                                });
+                            }
+                            if (newEmpList.length > 0) {
+                                employees = newEmpList;
+                                renderApp();
+                                showToast(`Sincronizados ${employees.length} colaboradores via Apps Script!`, "success");
+                                spin.classList.remove('fa-spin');
+                                return;
+                            }
+                        }
+                    } catch (e) {
+                        console.log("Falha na leitura via Apps Script URL, tentando CSV...", e);
+                    }
                 }
 
-                // Map header columns
+                // 2. Leitura direta via Google Sheets CSV (Separador BOX ou TEAM)
+                let boxData = null;
+                try {
+                    boxData = await fetchSheetCSV(activeSheetId, 'BOX');
+                } catch (e) {
+                    console.log("Separador BOX não disponível diretamente para leitura:", e.message);
+                }
+
+                if (boxData && boxData.length >= 2) {
+                    const newEmpList = [];
+                    for (let i = 1; i < boxData.length; i++) {
+                        const r = boxData[i];
+                        if (!r || r.length < 2 || !r[0]) continue;
+                        
+                        const colaborador = r[0] || '';
+                        const funcDept = r[1] || '';
+                        const perf = parseInt(r[2]) || 2;
+                        const pot = parseInt(r[3]) || 2;
+                        const pdi = r[5] || '';
+                        const prazoStatus = r[6] || '';
+
+                        const [role, dept] = funcDept.split('/').map(s => s ? s.trim() : '');
+                        const [deadline, status] = prazoStatus.split('-').map(s => s ? s.trim() : '');
+
+                        newEmpList.push({
+                            id: `${i}`,
+                            name: colaborador,
+                            role: role || 'Colaborador',
+                            dept: dept || inferDepartment(role),
+                            perf: perf,
+                            pot: pot,
+                            pdi: pdi,
+                            deadline: deadline || 'T3 2026',
+                            status: status || 'Em Curso'
+                        });
+                    }
+
+                    if (newEmpList.length > 0) {
+                        employees = newEmpList;
+                        renderApp();
+                        showToast(`Sincronizados ${employees.length} colaboradores do separador BOX!`, "success");
+                        spin.classList.remove('fa-spin');
+                        return;
+                    }
+                }
+
+                // Fallback para separador TEAM
+                const teamData = await fetchSheetCSV(activeSheetId, 'TEAM');
+                if (!teamData || teamData.length < 2) {
+                    throw new Error("Separador TEAM ou BOX não encontrado ou inacessível.");
+                }
+
                 const headers = teamData[0].map(h => h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
                 const idIdx = headers.findIndex(h => h.includes('id'));
                 const nameIdx = headers.findIndex(h => h.includes('nome'));
@@ -728,7 +892,6 @@
 
                 let evalMap = {};
                 try {
-                    // Try fetching AVALIACOES tab
                     const evalsData = await fetchSheetCSV(activeSheetId, 'AVALIACOES');
                     if (evalsData && evalsData.length >= 2) {
                         const evHeaders = evalsData[0].map(h => h.toLowerCase().trim());
@@ -753,7 +916,7 @@
                         }
                     }
                 } catch (e) {
-                    console.log("Separador AVALIACOES não encontrado ou em formato simplificado. A utilizar valores calculados por defeito.");
+                    console.log("Separador AVALIACOES não encontrado ou inacessível.");
                 }
 
                 const newEmployees = [];
@@ -770,7 +933,6 @@
                     const dept = (deptIdx !== -1 && row[deptIdx]) ? row[deptIdx] : inferDepartment(role);
                     const evaluator = (evalIdx !== -1 && row[evalIdx]) ? row[evalIdx] : 'Direção';
 
-                    // Merge with evaluation data or existing local evaluation
                     const existingLocal = employees.find(e => e.id.toString() === cleanId.toString());
                     const evData = evalMap[cleanId] || {
                         perf: existingLocal ? existingLocal.perf : 2,
@@ -805,9 +967,74 @@
             } catch (err) {
                 console.error(err);
                 showToast(`Erro na sincronização: ${err.message}`, "error");
-            } finally {
-                spin.classList.remove('fa-spin');
             }
+            spin.classList.remove('fa-spin');
+        }
+
+        async function saveToGoogleSheets() {
+            // Prepare rows for BOX tab matching required headers
+            const tableRows = employees.map(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                return [
+                    e.name,
+                    `${e.role} / ${e.dept}`,
+                    e.perf,
+                    e.pot,
+                    qInfo.name,
+                    e.pdi || '',
+                    `${e.deadline || ''} - ${e.status || ''}`,
+                    qInfo.strategy
+                ];
+            });
+
+            if (appsScriptUrl) {
+                try {
+                    showToast("A gravar dados no Google Sheets...", "info");
+                    const res = await fetch(appsScriptUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rows: tableRows })
+                    });
+                    showToast("Dados enviados para a aba BOX do Google Sheets com sucesso!", "success");
+                } catch (err) {
+                    console.error(err);
+                    showToast("Erro ao gravar. Copie a tabela para colar no Sheets.", "error");
+                    copyTableForSheets();
+                }
+            } else {
+                copyTableForSheets();
+                openSheetsModal();
+            }
+        }
+
+        function copyTableForSheets() {
+            let tsv = "Colaborador\tFunção / Dept.\tDesempenho\tPotencial\tQuadrante 9-Box\tPlano de Desenvolvimento (PDI)\tPrazo / Status\tAções\n";
+            employees.forEach(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                tsv += `${e.name}\t${e.role} / ${e.dept}\t${e.perf}\t${e.pot}\t${qInfo.name}\t${e.pdi || ''}\t${e.deadline || ''} - ${e.status || ''}\t${qInfo.strategy}\n`;
+            });
+
+            // Use execCommand for iframe compatibility
+            const textarea = document.createElement('textarea');
+            textarea.value = tsv;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+
+            showToast("Tabela da aba BOX copiada! Selecione A1 no Google Sheets e prima Ctrl+V.", "success");
+        }
+
+        function copyAppsScriptCode() {
+            const code = document.getElementById('scriptCodeBlock').innerText;
+            const textarea = document.createElement('textarea');
+            textarea.value = code;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showToast("Código Google Apps Script copiado para a área de transferência!", "success");
         }
 
         function renderApp() {
@@ -821,6 +1048,7 @@
         function saveToLocalStorage() {
             localStorage.setItem('talent_9box_employees_v3', JSON.stringify(employees));
             localStorage.setItem('talent_9box_sheet_id', activeSheetId);
+            localStorage.setItem('talent_9box_script_url', appsScriptUrl);
         }
 
         function populateDepartmentFilter() {
@@ -875,7 +1103,6 @@
         function renderGrid() {
             const filtered = getFilteredEmployees();
 
-            // Clear all boxes
             for (let i = 1; i <= 9; i++) {
                 const boxElem = document.getElementById(`box-${i}`);
                 if (!boxElem) continue;
@@ -885,7 +1112,6 @@
                 badge.textContent = '0';
             }
 
-            // Populate boxes
             filtered.forEach(e => {
                 const qInfo = getQuadrantInfo(e.perf, e.pot);
                 const boxElem = document.getElementById(`box-${qInfo.q}`);
@@ -1025,6 +1251,7 @@
 
         function openSheetsModal() {
             document.getElementById('sheetIdInput').value = activeSheetId;
+            document.getElementById('appsScriptUrlInput').value = appsScriptUrl;
             document.getElementById('sheetsModal').classList.remove('hidden');
         }
 
@@ -1034,7 +1261,6 @@
 
         function saveSheetsConfig() {
             let input = document.getElementById('sheetIdInput').value.trim();
-            // Extract ID if full URL pasted
             if (input.includes('/d/')) {
                 const matches = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
                 if (matches && matches[1]) {
@@ -1044,6 +1270,7 @@
 
             if (input) {
                 activeSheetId = input;
+                appsScriptUrl = document.getElementById('appsScriptUrlInput').value.trim();
                 closeSheetsModal();
                 syncWithGoogleSheets();
             } else {
@@ -1054,6 +1281,7 @@
         function restoreDefaultData() {
             employees = [...INITIAL_TEAM_RAW];
             activeSheetId = DEFAULT_SHEET_ID;
+            appsScriptUrl = "";
             closeSheetsModal();
             renderApp();
             showToast("Dados de exemplo restaurados com sucesso.", "info");
@@ -1163,21 +1391,18 @@
         }
 
         function exportToCSV() {
-            let csv = "ID,Nome,Profissao,Departamento,Avaliador,Desempenho,Potencial,Quadrante,PDI,Prazo,Status\n";
+            let csv = "Colaborador,Função / Dept.,Desempenho,Potencial,Quadrante 9-Box,Plano de Desenvolvimento (PDI),Prazo / Status,Ações\n";
             employees.forEach(e => {
                 const qInfo = getQuadrantInfo(e.perf, e.pot);
                 const row = [
-                    `"${e.id}"`,
                     `"${e.name}"`,
-                    `"${e.role}"`,
-                    `"${e.dept}"`,
-                    `"${e.evaluator || ''}"`,
+                    `"${e.role} / ${e.dept}"`,
                     e.perf,
                     e.pot,
                     `"${qInfo.name}"`,
                     `"${(e.pdi || '').replace(/"/g, '""')}"`,
-                    `"${e.deadline || ''}"`,
-                    `"${e.status}"`
+                    `"${e.deadline || ''} - ${e.status || ''}"`,
+                    `"${qInfo.strategy}"`
                 ];
                 csv += row.join(",") + "\n";
             });
@@ -1186,7 +1411,7 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Matriz_9Box_Somengil_${new Date().toISOString().slice(0,10)}.csv`;
+            a.download = `Matriz_9Box_Somengil_BOX_${new Date().toISOString().slice(0,10)}.csv`;
             a.click();
         }
 
@@ -1196,10 +1421,8 @@
             document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
         }
 
-        // Initialize App on window load
         window.onload = function() {
             renderApp();
-            // Automatically attempt sync with Google Sheets on startup
             syncWithGoogleSheets();
         };
     </script>
