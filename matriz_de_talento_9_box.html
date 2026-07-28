@@ -62,7 +62,7 @@
     <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                <div id="logoIcon" ondblclick="handleLogoDblClick()" class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
                     <i class="fa-solid fa-cubes-stacked text-lg"></i>
                 </div>
                 <div>
@@ -78,11 +78,11 @@
 
             <!-- Header Actions -->
             <div class="flex items-center space-x-2 sm:space-x-3">
-                <button onclick="saveToGoogleSheets()" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2" title="Gravar dados na aba BOX do Google Sheets">
+                <button onclick="armSheetsUnlock('save')" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2" title="Gravar dados na aba BOX do Google Sheets">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                     <span class="hidden sm:inline">Gravar no Sheets</span>
                 </button>
-                <button onclick="openSheetsModal()" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition shadow-sm flex items-center gap-2">
+                <button onclick="armSheetsUnlock('config')" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition shadow-sm flex items-center gap-2">
                     <i class="fa-solid fa-file-excel text-emerald-600 dark:text-emerald-400"></i>
                     <span class="hidden sm:inline">Configurar Sheet</span>
                 </button>
@@ -694,6 +694,8 @@ function doPost(e) {
 
         let activeSheetId = localStorage.getItem('talent_9box_sheet_id') || DEFAULT_SHEET_ID;
         let appsScriptUrl = localStorage.getItem('talent_9box_script_url') || "";
+        let pendingSheetsAction = null;
+        let sheetsUnlockTimer = null;
         let employees = JSON.parse(localStorage.getItem('talent_9box_employees_v3')) || INITIAL_TEAM_RAW;
 
         function getQuadrantInfo(perf, pot) {
@@ -1246,6 +1248,25 @@ function doPost(e) {
             const pdiField = document.getElementById('empPdi');
             if (!pdiField.value) {
                 pdiField.placeholder = `Recomendação Padrão: ${qInfo.strategy}`;
+            }
+        }
+
+        function armSheetsUnlock(action) {
+            pendingSheetsAction = action;
+            clearTimeout(sheetsUnlockTimer);
+            sheetsUnlockTimer = setTimeout(() => { pendingSheetsAction = null; }, 4000);
+            showToast("info");
+        }
+
+        function handleLogoDblClick() {
+            if (!pendingSheetsAction) return;
+            const action = pendingSheetsAction;
+            pendingSheetsAction = null;
+            clearTimeout(sheetsUnlockTimer);
+            if (action === 'config') {
+                openSheetsModal();
+            } else if (action === 'save') {
+                saveToGoogleSheets();
             }
         }
 
