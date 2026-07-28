@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Matriz de Talento e 9-Box - Somengil</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        q9: '#10b981',
+                        q8: '#0d9488',
+                        q7: '#f59e0b',
+                        q6: '#3b82f6',
+                        q5: '#6366f1',
+                        q4: '#f97316',
+                        q3: '#06b6d4',
+                        q2: '#64748b',
+                        q1: '#ef4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .grid-9box {
+            display: grid;
+            grid-template-columns: auto repeat(3, minmax(0, 1fr));
+            grid-template-rows: repeat(3, minmax(180px, auto)) auto;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(100, 116, 139, 0.3);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-200">
+
+    <header class="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md">
+                    <i class="fa-solid fa-cubes-stacked text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        Matriz de Talento 9-Box
+                        <span id="syncBadge" class="text-xs font-normal px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                            <i class="fa-solid fa-table"></i> Google Sheets Conectado
+                        </span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Mapeamento Estratégico de Desempenho vs Potencial • Somengil</p>
+                </div>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <a href="index.html" class="px-3.5 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition shadow-sm flex items-center gap-2" title="Voltar ao início">
+                    <i class="fa-solid fa-house"></i>
+                    <span class="hidden sm:inline">Início</span>
+                </a>
+                <button onclick="openSheetsModal()" class="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel"></i>
+                    <span class="hidden sm:inline">Google Sheets</span>
+                </button>
+                <button onclick="openAddModal()" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm transition shadow-sm flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Novo Colaborador</span>
+                </button>
+                <button onclick="exportToCSV()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition flex items-center gap-2" title="Exportar CSV">
+                    <i class="fa-solid fa-file-csv text-emerald-600 dark:text-emerald-400"></i>
+                    <span class="hidden md:inline">Exportar</span>
+                </button>
+                <button onclick="syncWithGoogleSheets()" class="px-3 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium text-sm transition flex items-center gap-2" title="Atualizar Dados do Sheets">
+                    <i id="syncSpinIcon" class="fa-solid fa-arrows-rotate text-blue-600 dark:text-blue-400"></i>
+                </button>
+                <button onclick="toggleDarkMode()" class="p-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Notification Banner -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <div id="toastContent" class="px-4 py-3 rounded-xl shadow-lg bg-slate-900 text-white text-sm flex items-center gap-3 border border-slate-700">
+            <i id="toastIcon" class="fa-solid fa-circle-info text-blue-400"></i>
+            <span id="toastMessage">Notificação</span>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg">
+                    <i class="fa-solid fa-users text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Total Colaboradores</p>
+                    <h3 id="statTotal" class="text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                    <i class="fa-solid fa-star text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Top Talent (Q9)</p>
+                    <h3 id="statStars" class="text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-lg">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Core Players (Q5/Q6)</p>
+                    <h3 id="statCore" class="text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex items-center space-x-4">
+                <div class="p-3 bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400 rounded-lg">
+                    <i class="fa-solid fa-triangle-exclamation text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Atenção / Risco (Q1/Q7)</p>
+                    <h3 id="statRisk" class="text-2xl font-bold text-slate-900 dark:text-white">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter and Tab Bar -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <!-- View Selector Tabs -->
+            <div class="flex bg-slate-100 dark:bg-slate-700/60 p-1 rounded-lg w-full sm:w-auto">
+                <button id="tabGridBtn" onclick="switchTab('grid')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm">
+                    <i class="fa-solid fa-border-all mr-2"></i>Matriz Visual (3x3)
+                </button>
+                <button id="tabTableBtn" onclick="switchTab('table')" class="flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+                    <i class="fa-solid fa-table-list mr-2"></i>Tabela Geral / PDI
+                </button>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                <div class="relative flex-1 sm:flex-none min-w-[180px]">
+                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                    <input type="text" id="searchInput" oninput="renderApp()" placeholder="Pesquisar por nome ou cargo..." class="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <select id="deptFilter" onchange="renderApp()" class="py-1.5 px-3 text-sm rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos os Departamentos</option>
+                </select>
+
+                <select id="quadrantFilter" onchange="renderApp()" class="py-1.5 px-3 text-sm rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Todos os Quadrantes</option>
+                    <option value="9">Q9 - Estrela / Top Talent</option>
+                    <option value="8">Q8 - Alto Potencial</option>
+                    <option value="7">Q7 - Dilema / Enigma</option>
+                    <option value="6">Q6 - Forte Desempenho</option>
+                    <option value="5">Q5 - Core Player</option>
+                    <option value="4">Q4 - Em Desenvolvimento</option>
+                    <option value="3">Q3 - Especialista Sênior</option>
+                    <option value="2">Q2 - Bom Cumpridor</option>
+                    <option value="1">Q1 - Risco Operacional</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- TAB 1: 9-BOX VISUAL GRID VIEW -->
+        <div id="gridView" class="block space-y-4">
+            
+            <div class="overflow-x-auto pb-4">
+                <div class="min-w-[850px] bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                    
+                    <!-- Grid Container -->
+                    <div class="grid grid-cols-[40px_1fr_1fr_1fr] grid-rows-[1fr_1fr_1fr_40px] gap-3">
+                        
+                        <!-- Y Axis Label -->
+                        <div class="row-span-3 flex items-center justify-center">
+                            <span class="transform -rotate-90 text-xs font-bold tracking-widest text-slate-400 uppercase whitespace-nowrap">
+                                POTENCIAL FUTURO ▲
+                            </span>
+                        </div>
+
+                        <!-- ROW 1 (Potencial Alto = 3) -->
+                        <!-- Box Q7 -->
+                        <div id="box-7" onclick="filterByBox(7)" class="p-3.5 rounded-xl border-2 border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/60 px-2 py-0.5 rounded">Q7 - Dilema</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-amber-200 dark:bg-amber-800 text-amber-800 dark:text-amber-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Baixo Desempenho / Alto Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-amber-600 dark:text-amber-400 mt-2 italic truncate">Estratégia: Reavaliar / Investigar causas</p>
+                        </div>
+
+                        <!-- Box Q8 -->
+                        <div id="box-8" onclick="filterByBox(8)" class="p-3.5 rounded-xl border-2 border-teal-200 dark:border-teal-900/40 bg-teal-50/50 dark:bg-teal-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-teal-700 dark:text-teal-400 bg-teal-100 dark:bg-teal-900/60 px-2 py-0.5 rounded">Q8 - Alto Potencial</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-teal-200 dark:bg-teal-800 text-teal-800 dark:text-teal-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Médio Desempenho / Alto Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-teal-600 dark:text-teal-400 mt-2 italic truncate">Estratégia: Coaching & Aceleração</p>
+                        </div>
+
+                        <!-- Box Q9 -->
+                        <div id="box-9" onclick="filterByBox(9)" class="p-3.5 rounded-xl border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/60 dark:bg-emerald-950/30 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-200 dark:bg-emerald-900/80 px-2 py-0.5 rounded flex items-center gap-1">
+                                        <i class="fa-solid fa-crown text-amber-500"></i> Q9 - Estrela
+                                    </span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-300 dark:bg-emerald-800 text-emerald-900 dark:text-emerald-100">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Alto Desempenho / Alto Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-emerald-700 dark:text-emerald-400 mt-2 italic truncate font-semibold">Estratégia: Retenção & Plano de Sucessão</p>
+                        </div>
+
+
+                        <!-- ROW 2 (Potencial Médio = 2) -->
+                        <!-- Box Q4 -->
+                        <div id="box-4" onclick="filterByBox(4)" class="p-3.5 rounded-xl border-2 border-orange-200 dark:border-orange-900/40 bg-orange-50/50 dark:bg-orange-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-orange-700 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/60 px-2 py-0.5 rounded">Q4 - Em Desenvolv.</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Baixo Desempenho / Médio Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-orange-600 dark:text-orange-400 mt-2 italic truncate">Estratégia: Treinar competências</p>
+                        </div>
+
+                        <!-- Box Q5 -->
+                        <div id="box-5" onclick="filterByBox(5)" class="p-3.5 rounded-xl border-2 border-indigo-200 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-indigo-700 dark:text-indigo-400 bg-indigo-100 dark:bg-indigo-900/60 px-2 py-0.5 rounded">Q5 - Core Player</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-200 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Médio Desempenho / Médio Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-indigo-600 dark:text-indigo-400 mt-2 italic truncate">Estratégia: Formação & Aperfeiçoamento</p>
+                        </div>
+
+                        <!-- Box Q6 -->
+                        <div id="box-6" onclick="filterByBox(6)" class="p-3.5 rounded-xl border-2 border-blue-200 dark:border-blue-900/40 bg-blue-50/50 dark:bg-blue-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 rounded">Q6 - Forte Desempenho</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-blue-200 dark:bg-blue-800 text-blue-800 dark:text-blue-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Alto Desempenho / Médio Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-blue-600 dark:text-blue-400 mt-2 italic truncate">Estratégia: Projetos Transversais</p>
+                        </div>
+
+
+                        <!-- ROW 3 (Potencial Baixo = 1) -->
+                        <!-- Box Q1 -->
+                        <div id="box-1" onclick="filterByBox(1)" class="p-3.5 rounded-xl border-2 border-rose-300 dark:border-rose-900/50 bg-rose-50/50 dark:bg-rose-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-rose-700 dark:text-rose-400 bg-rose-100 dark:bg-rose-900/60 px-2 py-0.5 rounded">Q1 - Risco Operacional</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-rose-200 dark:bg-rose-800 text-rose-800 dark:text-rose-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Baixo Desempenho / Baixo Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-rose-600 dark:text-rose-400 mt-2 italic truncate font-semibold">Estratégia: PIP 90 dias / Transição</p>
+                        </div>
+
+                        <!-- Box Q2 -->
+                        <div id="box-2" onclick="filterByBox(2)" class="p-3.5 rounded-xl border-2 border-slate-300 dark:border-slate-700 bg-slate-100/50 dark:bg-slate-800/40 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-200 dark:bg-slate-700 px-2 py-0.5 rounded">Q2 - Bom Cumpridor</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-slate-300 dark:bg-slate-600 text-slate-800 dark:text-slate-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Médio Desempenho / Baixo Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-slate-600 dark:text-slate-400 mt-2 italic truncate">Estratégia: Manter na Função</p>
+                        </div>
+
+                        <!-- Box Q3 -->
+                        <div id="box-3" onclick="filterByBox(3)" class="p-3.5 rounded-xl border-2 border-cyan-200 dark:border-cyan-900/40 bg-cyan-50/50 dark:bg-cyan-950/20 hover:shadow-md transition cursor-pointer relative min-h-[160px] flex flex-col justify-between">
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-xs font-bold text-cyan-700 dark:text-cyan-400 bg-cyan-100 dark:bg-cyan-900/60 px-2 py-0.5 rounded">Q3 - Esp. Sênior</span>
+                                    <span class="count-badge text-xs font-bold px-2 py-0.5 rounded-full bg-cyan-200 dark:bg-cyan-800 text-cyan-800 dark:text-cyan-200">0</span>
+                                </div>
+                                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2 font-medium">Alto Desempenho / Baixo Potencial</p>
+                                <div class="employee-list space-y-1.5 custom-scrollbar max-h-[110px] overflow-y-auto"></div>
+                            </div>
+                            <p class="text-[10px] text-cyan-600 dark:text-cyan-400 mt-2 italic truncate">Estratégia: Mentoria Técnica</p>
+                        </div>
+
+                        <!-- X Axis Labels -->
+                        <div></div>
+                        <div class="text-center font-bold text-xs text-slate-500 dark:text-slate-400 uppercase pt-2">
+                            1 - BAIXO DESEMPENHO
+                        </div>
+                        <div class="text-center font-bold text-xs text-slate-500 dark:text-slate-400 uppercase pt-2">
+                            2 - MÉDIO DESEMPENHO
+                        </div>
+                        <div class="text-center font-bold text-xs text-slate-500 dark:text-slate-400 uppercase pt-2">
+                            3 - ALTO DESEMPENHO
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 2: DATA TABLE VIEW -->
+        <div id="tableView" class="hidden">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs uppercase font-semibold border-b border-slate-200 dark:border-slate-700">
+                            <tr>
+                                <th class="py-3.5 px-4">Colaborador</th>
+                                <th class="py-3.5 px-4">Função / Dept.</th>
+                                <th class="py-3.5 px-4 text-center">Desempenho</th>
+                                <th class="py-3.5 px-4 text-center">Potencial</th>
+                                <th class="py-3.5 px-4">Quadrante 9-Box</th>
+                                <th class="py-3.5 px-4">Plano de Desenvolvimento (PDI)</th>
+                                <th class="py-3.5 px-4">Prazo / Status</th>
+                                <th class="py-3.5 px-4 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody" class="divide-y divide-slate-200 dark:divide-slate-700/60 text-slate-700 dark:text-slate-200">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- GOOGLE SHEETS CONFIGURATION MODAL -->
+    <div id="sheetsModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-xl w-full p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 dark:border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-file-excel text-emerald-600"></i> Conectar com Google Sheets
+                </h3>
+                <button onclick="closeSheetsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                <p>Insira o ID da Folha de Cálculo do Google Sheets para ler os dados em tempo real:</p>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Google Sheet ID ou URL Completa</label>
+                    <input type="text" id="sheetIdInput" placeholder="ex: 139l3QsIT6M9w5ZsMsKqJRl_vP3SOmevYs0ajCOR9_ig" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-emerald-500">
+                    <p class="text-[11px] text-slate-400 mt-1">Garantir que a partilha no Google Sheets está como: <b>"Qualquer pessoa com o link pode ver"</b>.</p>
+                </div>
+
+                <div class="p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-900/50 text-xs text-blue-800 dark:text-blue-300 space-y-1">
+                    <p class="font-bold"><i class="fa-solid fa-circle-info mr-1"></i> Separadores Detetados Automaticamente:</p>
+                    <ul class="list-disc list-inside space-y-0.5 opacity-90">
+                        <li><b>TEAM</b> (Dados dos colaboradores: ID, Nome, Profissao, etc.)</li>
+                        <li><b>AVALIACOES</b> (Notas e PDI: ID, Desempenho, Potencial, PDI_Acoes, etc.)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <button onclick="restoreDefaultData()" class="text-xs text-amber-600 hover:underline">Restaurar Exemplo Local</button>
+                <div class="flex gap-2">
+                    <button onclick="closeSheetsModal()" class="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Cancelar</button>
+                    <button onclick="saveSheetsConfig()" class="px-5 py-2 text-sm font-medium rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition flex items-center gap-2">
+                        <i class="fa-solid fa-sync"></i> Sincronizar Agora
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD/EDIT EMPLOYEE MODAL -->
+    <div id="employeeModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto custom-scrollbar">
+            
+            <div class="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-white dark:bg-slate-800 z-10">
+                <h3 id="modalTitle" class="text-lg font-bold text-slate-900 dark:text-white">Adicionar Colaborador</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="employeeForm" onsubmit="saveEmployee(event)" class="p-6 space-y-4">
+                <input type="hidden" id="empIndex" value="-1">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">ID Colaborador</label>
+                        <input type="text" id="empId" required placeholder="ex: 72" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nome Completo</label>
+                        <input type="text" id="empName" required placeholder="Nome do colaborador" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Cargo / Profissão</label>
+                        <input type="text" id="empRole" required placeholder="ex: SOLDADOR ESPECIALIZADO" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Departamento</label>
+                        <input type="text" id="empDept" required placeholder="ex: Produção" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Avaliador / Responsável</label>
+                        <input type="text" id="empEvaluator" placeholder="ex: Luís Pereira" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Nível Habilitações</label>
+                        <input type="text" id="empEdu" placeholder="ex: 5" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                    </div>
+
+                    <!-- Scores -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Desempenho Atual (Eixo X)</label>
+                        <select id="empPerformance" onchange="updateCalculatedBox()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                            <option value="1">1 - Baixo (&lt;80% das metas)</option>
+                            <option value="2" selected>2 - Médio (80% - 105% das metas)</option>
+                            <option value="3">3 - Alto (&gt;105% das metas)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Potencial Futuro (Eixo Y)</label>
+                        <select id="empPotential" onchange="updateCalculatedBox()" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                            <option value="1">1 - Baixo (Foco na função atual)</option>
+                            <option value="2" selected>2 - Médio (Capacidade para +1 nível)</option>
+                            <option value="3">3 - Alto (Visão estratégica / Liderança)</option>
+                        </select>
+                    </div>
+
+                    <!-- Auto Quadrant Badge Preview -->
+                    <div class="sm:col-span-2 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-800 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-blue-700 dark:text-blue-300 font-medium">Quadrante Mapeado:</p>
+                            <h4 id="calcQuadrantName" class="text-sm font-bold text-blue-900 dark:text-blue-100">Q5 - Core Player</h4>
+                        </div>
+                        <span id="calcQuadrantBadge" class="px-3 py-1 text-xs font-bold rounded-full bg-blue-600 text-white">Q5</span>
+                    </div>
+                </div>
+
+                <!-- PDI Section -->
+                <div class="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
+                    <h4 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-bullseye text-blue-500"></i> Plano de Desenvolvimento Individual (PDI)
+                    </h4>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Ações Recomendadas / PDI</label>
+                        <textarea id="empPdi" rows="2" placeholder="Descreva as ações estratégicas de desenvolvimento..." class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Prazo de Execução</label>
+                            <input type="text" id="empPdiDeadline" placeholder="ex: T3 2026" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1">Status do PDI</label>
+                            <select id="empPdiStatus" class="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 focus:ring-2 focus:ring-blue-500">
+                                <option value="Planeado">Planeado</option>
+                                <option value="Em Curso" selected>Em Curso</option>
+                                <option value="Concluído">Concluído</option>
+                                <option value="Urgente">Urgente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="border-t border-slate-200 dark:border-slate-700 pt-4 flex justify-end space-x-3">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm font-medium rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 text-sm font-medium rounded-lg bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition">Guardar Colaborador</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW DETAILS MODAL -->
+    <div id="viewModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl max-w-lg w-full p-6 space-y-4">
+            <div class="flex justify-between items-start border-b border-slate-200 dark:border-slate-700 pb-3">
+                <div>
+                    <span id="viewId" class="text-xs font-bold text-slate-400 uppercase">COL-000</span>
+                    <h3 id="viewName" class="text-xl font-bold text-slate-900 dark:text-white">Nome do Colaborador</h3>
+                    <p id="viewRoleDept" class="text-xs text-slate-500 dark:text-slate-400">Cargo • Departamento</p>
+                </div>
+                <button onclick="closeViewModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs text-slate-400">Desempenho</p>
+                    <p id="viewPerf" class="text-base font-bold text-slate-800 dark:text-slate-200">-</p>
+                </div>
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs text-slate-400">Potencial</p>
+                    <p id="viewPot" class="text-base font-bold text-slate-800 dark:text-slate-200">-</p>
+                </div>
+            </div>
+
+            <div id="viewQuadBox" class="p-4 rounded-xl border flex justify-between items-center">
+                <div>
+                    <p class="text-xs font-medium opacity-80">Quadrante Atribuído</p>
+                    <h4 id="viewQuadTitle" class="text-lg font-bold">Quadrante</h4>
+                </div>
+                <span id="viewQuadBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-white/20">Q0</span>
+            </div>
+
+            <div class="space-y-2">
+                <h4 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Estratégia & PDI Recomendado</h4>
+                <div id="viewPdiContent" class="p-3.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-sm text-slate-700 dark:text-slate-300">
+                    -
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center text-xs text-slate-500 pt-2">
+                <span>Avaliador: <strong id="viewEvaluator" class="text-slate-700 dark:text-slate-300">-</strong></span>
+                <span>Prazo PDI: <strong id="viewDeadline" class="text-slate-700 dark:text-slate-300">-</strong></span>
+            </div>
+
+            <div class="pt-2 flex justify-end">
+                <button onclick="closeViewModal()" class="px-4 py-2 text-sm font-medium rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const QUADRANT_RULES = {
+            "3-3": { q: 9, name: "Q9 - Estrela / Top Talent", strategy: "Retenção proativa; incluir em plano de sucessão e mentoring com a Administração.", bg: "bg-emerald-500", border: "border-emerald-500", text: "text-emerald-700" },
+            "2-3": { q: 8, name: "Q8 - Alto Potencial", strategy: "Coaching de execução e gestão do tempo para converter potencial em resultados consistentes.", bg: "bg-teal-600", border: "border-teal-600", text: "text-teal-700" },
+            "1-3": { q: 7, name: "Q7 - Dilema / Enigma", strategy: "Investigar causas do baixo desempenho. Reavaliar função/equipa e definir PIP urgente.", bg: "bg-amber-500", border: "border-amber-500", text: "text-amber-700" },
+            "3-2": { q: 6, name: "Q6 - Forte Desempenho", strategy: "Desafiar com projetos transversais e testar expansão de potencial de liderança.", bg: "bg-blue-500", border: "border-blue-500", text: "text-blue-700" },
+            "2-2": { q: 5, name: "Q5 - Core Player", strategy: "Manter motivado e dar formação contínua de aperfeiçoamento na função.", bg: "bg-indigo-500", border: "border-indigo-500", text: "text-indigo-700" },
+            "1-2": { q: 4, name: "Q4 - Em Desenvolvimento", strategy: "Treinar competências técnicas e comportamentais com acompanhamento próximo.", bg: "bg-orange-500", border: "border-orange-500", text: "text-orange-700" },
+            "3-1": { q: 3, name: "Q3 - Especialista Sênior", strategy: "Aproveitar como mentor técnico; valorizar o domínio na função atual.", bg: "bg-cyan-500", border: "border-cyan-500", text: "text-cyan-700" },
+            "2-1": { q: 2, name: "Q2 - Bom Cumpridor", strategy: "Manter na função atual com bom acompanhamento operacional.", bg: "bg-slate-500", border: "border-slate-500", text: "text-slate-700" },
+            "1-1": { q: 1, name: "Q1 - Risco Operacional", strategy: "Definir Plano de Melhoria de Desempenho (PIP 90 dias) ou reavaliar adequação.", bg: "bg-rose-500", border: "border-rose-500", text: "text-rose-700" }
+        };
+
+        const DEFAULT_SHEET_ID = "139l3QsIT6M9w5ZsMsKqJRl_vP3SOmevYs0ajCOR9_ig";
+
+        const INITIAL_TEAM_RAW = [
+            { id: "72", name: "Abel dos Reis Tavares", role: "SOLDADOR ESPECIALIZADO GRAU 6", dept: "Produção", perf: 3, pot: 2, pdi: "Co-liderança em projetos de inovação MWS", deadline: "T3 2026", status: "Em Curso" },
+            { id: "3265", name: "Alexandre Miguel Silva Nunes das Neves", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 2, pot: 2, pdi: "Formação em automação industrial e segurança", deadline: "T4 2026", status: "Em Curso" },
+            { id: "15", name: "Cândido Manuel dos Santos Veloso", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Pós-Venda", perf: 3, pot: 1, pdi: "Mentoria técnica em suporte a clientes internacionais", deadline: "T3 2026", status: "Em Curso" },
+            { id: "57", name: "Carina Andreia Rocha Robaina", role: "ASSISTENTE ADMINISTRATIVO GRAU 7", dept: "Qualidade", perf: 3, pot: 3, pdi: "Plano de sucessão e liderança de auditoria ISO 9001", deadline: "T4 2026", status: "Planeado" },
+            { id: "23", name: "Carlos Manuel Santos Tarenta", role: "TÉCNICO DE LOGISTICA INDUSTRIAL GRAU 7", dept: "Logística", perf: 2, pot: 1, pdi: "Otimização de processos de armazém e expedição", deadline: "T3 2026", status: "Em Curso" },
+            { id: "68", name: "Carlos Miguel Tavares Almeida", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Engenharia", perf: 2, pot: 3, pdi: "Coaching para coordenação de equipa de design industrial", deadline: "T3 2026", status: "Em Curso" },
+            { id: "61", name: "David José Nunes Borges", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 3, pot: 3, pdi: "Desenvolvimento de novos mercados internacionais", deadline: "T4 2026", status: "Em Curso" },
+            { id: "82", name: "Davide Sturla", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 2, pot: 2, pdi: "Expansão da rede de distribuição", deadline: "T3 2026", status: "Em Curso" },
+            { id: "77", name: "Diogo Miguel Fernandez Martins", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 1, pot: 2, pdi: "Acompanhamento em projeto elétrico com tutor dedicado", deadline: "T2 2026", status: "Em Curso" },
+            { id: "67", name: "Diogo Paulo Gonçalves Marques Brito de Sousa", role: "TÉCNICO COMERCIAL E MARKETING GRAU 7", dept: "Comercial", perf: 3, pot: 2, pdi: "Estratégia de marketing digital B2B", deadline: "T3 2026", status: "Em Curso" },
+            { id: "48", name: "Fábio da Rocha Silva", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Produção", perf: 1, pot: 1, pdi: "Plano de Melhoria de Desempenho (PIP) em conformidade", deadline: "T2 2026", status: "Urgente" },
+            { id: "56", name: "Ilídio Costa Ferreira", role: "SOLDADOR ESPECIALIZADO GRAU 6", dept: "Produção", perf: 3, pot: 1, pdi: "Ações de manutenção preventiva e soldadura avançada", deadline: "T4 2026", status: "Concluído" },
+            { id: "76", name: "João Maria Bernardo da Cunha Pinto", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 3, pot: 2, pdi: "Implementação de novas estratégias de contacto", deadline: "T3 2026", status: "Em Curso" },
+            { id: "12", name: "Jonathan de Figueiredo Santos", role: "RESIDUAL Eng./Adm (Inclui o ignorado)", dept: "Engenharia", perf: 2, pot: 2, pdi: "Curso de diagnóstico elétrico e hidráulico", deadline: "T3 2026", status: "Em Curso" },
+            { id: "2", name: "Joni André Costa Regalado", role: "RESIDUAL Eng./Adm (Inclui o ignorado)", dept: "Engenharia", perf: 3, pot: 3, pdi: "Programa de Alta Direção e gestão estratégica de IDI", deadline: "T4 2026", status: "Em Curso" },
+            { id: "78", name: "José Gabriel Simões Ferreira", role: "SERRALHEIRO MECÂNICO GRAU 8", dept: "Produção", perf: 2, pot: 3, pdi: "Aperfeiçoamento em corte e conformação de chapas", deadline: "T3 2026", status: "Planeado" },
+            { id: "75", name: "Luís Leonel Nogueira Pereira", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Produção", perf: 3, pot: 2, pdi: "Gestão Lean Manufacturing e otimização de fluxos", deadline: "T3 2026", status: "Em Curso" },
+            { id: "24", name: "Manuel Diniz Cruz do Marco", role: "VENDEDOR GRAU 7", dept: "Comercial", perf: 3, pot: 1, pdi: "Mentoria operacional de novos colaboradores", deadline: "T4 2026", status: "Em Curso" },
+            { id: "44", name: "Manuel Ferreira Martins", role: "SERRALHEIRO MECÂNICO GRAU 8", dept: "Produção", perf: 2, pot: 1, pdi: "Formação em montagem e ajustamento mecânico", deadline: "T3 2026", status: "Em Curso" },
+            { id: "70", name: "Mário Jorge Marques Peixinho Fragoso", role: "TÉCNICO DE QUALIDADE GRAU 5", dept: "Qualidade", perf: 3, pot: 2, pdi: "Expansão da auditoria interna e controlo de tolerâncias", deadline: "T3 2026", status: "Em Curso" },
+            { id: "74", name: "Miguel André Ferreira Pacheco Quental", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 1, pot: 3, pdi: "Acompanhamento próximo em gestão de prioridades", deadline: "T2 2026", status: "Urgente" },
+            { id: "80", name: "Miguel do Marco Marta", role: "RESIDUAL Eng./Adm (Inclui o ignorado)", dept: "Engenharia", perf: 2, pot: 2, pdi: "Formação avançada em modelação 3D", deadline: "T3 2026", status: "Em Curso" },
+            { id: "81", name: "Miguel Pinho Marques Moura", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 2, pot: 3, pdi: "Estágio prático em automação e robótica", deadline: "T3 2026", status: "Planeado" },
+            { id: "55", name: "Octávio Ferreira da Silva", role: "SOLDADOR ESPECIALIZADO GRAU 6", dept: "Produção", perf: 2, pot: 1, pdi: "Formação em controlo dimensional e ensaios não destrutivos", deadline: "T3 2026", status: "Em Curso" },
+            { id: "54", name: "Pedro Daniel Domingues Barreira", role: "SERRALHEIRO CIVIL GRAU 7", dept: "Produção", perf: 1, pot: 2, pdi: "Reforço de competências em leitura de projeto e maquinação", deadline: "T2 2026", status: "Em Curso" },
+            { id: "58", name: "Renato Pires Gomes", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 2, pot: 2, pdi: "Treino de comissionamento e apoio pós-venda", deadline: "T3 2026", status: "Em Curso" },
+            { id: "679", name: "Ricardo Gonçalves Carvalhais", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 3, pot: 3, pdi: "Liderança da otimização de instalações elétricas", deadline: "T4 2026", status: "Em Curso" },
+            { id: "9", name: "Ricardo Nunes Hipólito", role: "DESENHADOR-PROJECTISTA GRAU3", dept: "Engenharia", perf: 3, pot: 2, pdi: "Otimização da cadeia de suprimentos e projetos CAD", deadline: "T3 2026", status: "Em Curso" },
+            { id: "83", name: "Rui Filipe da Silva Jorge", role: "SERRALHEIRO CIVIL GRAU 7", dept: "Produção", perf: 2, pot: 1, pdi: "Certificação em soldadura de estruturas pesadas", deadline: "T3 2026", status: "Em Curso" },
+            { id: "73", name: "Samuel Gomes Póvoa", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 2, pot: 3, pdi: "Desenvolvimento de novos protocolos de manutenção", deadline: "T3 2026", status: "Em Curso" },
+            { id: "84", name: "Simão Jorge Ventura", role: "VENDEDOR GRAU 6", dept: "Comercial", perf: 1, pot: 1, pdi: "Plano PIP 90 dias com revisão semanal de KPI", deadline: "T2 2026", status: "Urgente" },
+            { id: "64", name: "Tiago Emanuel Lisboa Dias", role: "TÉCNICO DE MANUT.,MEC.,ELECTROM.,GRAU 8", dept: "Manutenção", perf: 3, pot: 2, pdi: "Ações de formação em redes industriais e automação", deadline: "T3 2026", status: "Em Curso" }
+        ];
+
+        let activeSheetId = localStorage.getItem('talent_9box_sheet_id') || DEFAULT_SHEET_ID;
+        let employees = JSON.parse(localStorage.getItem('talent_9box_employees_v3')) || INITIAL_TEAM_RAW;
+
+        function getQuadrantInfo(perf, pot) {
+            const key = `${perf}-${pot}`;
+            return QUADRANT_RULES[key] || { q: 0, name: "Desconhecido", strategy: "-", bg: "bg-slate-400", border: "border-slate-400", text: "text-slate-600" };
+        }
+
+        // Auto-detect Department based on Job Title / Profession
+        function inferDepartment(role) {
+            if (!role) return "Geral";
+            const upper = role.toUpperCase();
+            if (upper.includes("SOLDADOR") || upper.includes("SERRALHEIRO") || upper.includes("FABRICO") || upper.includes("PRODUÇÃO")) return "Produção";
+            if (upper.includes("MANUT") || upper.includes("ELECTROM")) return "Manutenção";
+            if (upper.includes("VENDEDOR") || upper.includes("COMERCIAL") || upper.includes("MARKETING")) return "Comercial";
+            if (upper.includes("QUALIDADE")) return "Qualidade";
+            if (upper.includes("LOGISTICA") || upper.includes("ARMAZÉM")) return "Logística";
+            if (upper.includes("ENG") || upper.includes("PROJECTISTA") || upper.includes("DESENHADOR") || upper.includes("RESIDUAL")) return "Engenharia";
+            return "Outro";
+        }
+
+        function showToast(message, type = "info") {
+            const toast = document.getElementById('toastNotification');
+            const msg = document.getElementById('toastMessage');
+            const icon = document.getElementById('toastIcon');
+
+            msg.textContent = message;
+            if (type === "success") {
+                icon.className = "fa-solid fa-circle-check text-emerald-400";
+            } else if (type === "error") {
+                icon.className = "fa-solid fa-triangle-exclamation text-rose-400";
+            } else {
+                icon.className = "fa-solid fa-circle-info text-blue-400";
+            }
+
+            toast.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none');
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none');
+            }, 3500);
+        }
+
+        // Parse CSV string safely handling quoted text
+        function parseCSV(text) {
+            const lines = text.split(/\r\n|\n/);
+            const result = [];
+            for (let i = 0; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                const row = [];
+                let insideQuote = false;
+                let entry = '';
+                for (let char of lines[i]) {
+                    if (char === '"') {
+                        insideQuote = !insideQuote;
+                    } else if (char === ',' && !insideQuote) {
+                        row.push(entry.trim().replace(/^"|"$/g, ''));
+                        entry = '';
+                    } else {
+                        entry += char;
+                    }
+                }
+                row.push(entry.trim().replace(/^"|"$/g, ''));
+                result.push(row);
+            }
+            return result;
+        }
+
+        async function fetchSheetCSV(sheetId, tabName) {
+            const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error(`Falha ao carregar separador ${tabName}`);
+            const text = await res.text();
+            return parseCSV(text);
+        }
+
+        async function syncWithGoogleSheets() {
+            const spin = document.getElementById('syncSpinIcon');
+            spin.classList.add('fa-spin');
+
+            try {
+                // Fetch TEAM tab
+                const teamData = await fetchSheetCSV(activeSheetId, 'TEAM');
+                if (!teamData || teamData.length < 2) {
+                    throw new Error("Separador TEAM vazio ou inválido.");
+                }
+
+                // Map header columns
+                const headers = teamData[0].map(h => h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+                const idIdx = headers.findIndex(h => h.includes('id'));
+                const nameIdx = headers.findIndex(h => h.includes('nome'));
+                const roleIdx = headers.findIndex(h => h.includes('profissao') || h.includes('cargo'));
+                const deptIdx = headers.findIndex(h => h.includes('departamento') || h.includes('dept'));
+                const evalIdx = headers.findIndex(h => h.includes('avaliador') || h.includes('responsavel'));
+
+                let evalMap = {};
+                try {
+                    // Try fetching AVALIACOES tab
+                    const evalsData = await fetchSheetCSV(activeSheetId, 'AVALIACOES');
+                    if (evalsData && evalsData.length >= 2) {
+                        const evHeaders = evalsData[0].map(h => h.toLowerCase().trim());
+                        const evIdIdx = evHeaders.findIndex(h => h.includes('id'));
+                        const perfIdx = evHeaders.findIndex(h => h.includes('desempenho') || h.includes('perf'));
+                        const potIdx = evHeaders.findIndex(h => h.includes('potencial') || h.includes('pot'));
+                        const pdiIdx = evHeaders.findIndex(h => h.includes('pdi'));
+                        const deadlineIdx = evHeaders.findIndex(h => h.includes('prazo'));
+                        const statusIdx = evHeaders.findIndex(h => h.includes('status'));
+
+                        for (let i = 1; i < evalsData.length; i++) {
+                            const r = evalsData[i];
+                            if (!r[evIdIdx]) continue;
+                            const idVal = r[evIdIdx].replace('#', '').trim();
+                            evalMap[idVal] = {
+                                perf: parseInt(r[perfIdx]) || 2,
+                                pot: parseInt(r[potIdx]) || 2,
+                                pdi: pdiIdx !== -1 ? r[pdiIdx] : '',
+                                deadline: deadlineIdx !== -1 ? r[deadlineIdx] : '',
+                                status: statusIdx !== -1 ? r[statusIdx] : 'Em Curso'
+                            };
+                        }
+                    }
+                } catch (e) {
+                    console.log("Separador AVALIACOES não encontrado ou em formato simplificado. A utilizar valores calculados por defeito.");
+                }
+
+                const newEmployees = [];
+                for (let i = 1; i < teamData.length; i++) {
+                    const row = teamData[i];
+                    if (!row || row.length === 0) continue;
+
+                    const rawId = (idIdx !== -1 ? row[idIdx] : row[0]) || `COL-${i}`;
+                    const cleanId = rawId.replace('#', '').trim();
+                    const name = (nameIdx !== -1 ? row[nameIdx] : row[1]) || '';
+                    if (!name) continue;
+
+                    const role = (roleIdx !== -1 ? row[roleIdx] : row[5]) || 'Colaborador';
+                    const dept = (deptIdx !== -1 && row[deptIdx]) ? row[deptIdx] : inferDepartment(role);
+                    const evaluator = (evalIdx !== -1 && row[evalIdx]) ? row[evalIdx] : 'Direção';
+
+                    // Merge with evaluation data or existing local evaluation
+                    const existingLocal = employees.find(e => e.id.toString() === cleanId.toString());
+                    const evData = evalMap[cleanId] || {
+                        perf: existingLocal ? existingLocal.perf : 2,
+                        pot: existingLocal ? existingLocal.pot : 2,
+                        pdi: existingLocal ? existingLocal.pdi : 'Desenvolvimento profissional e acompanhamento de metas.',
+                        deadline: existingLocal ? existingLocal.deadline : 'T3 2026',
+                        status: existingLocal ? existingLocal.status : 'Em Curso'
+                    };
+
+                    newEmployees.push({
+                        id: cleanId,
+                        name: name,
+                        role: role,
+                        dept: dept,
+                        evaluator: evaluator,
+                        perf: evData.perf,
+                        pot: evData.pot,
+                        pdi: evData.pdi,
+                        deadline: evData.deadline,
+                        status: evData.status
+                    });
+                }
+
+                if (newEmployees.length > 0) {
+                    employees = newEmployees;
+                    renderApp();
+                    showToast(`Sincronizados ${employees.length} colaboradores do Google Sheets!`, "success");
+                } else {
+                    showToast("Nenhum registo válido encontrado no Sheets.", "error");
+                }
+
+            } catch (err) {
+                console.error(err);
+                showToast(`Erro na sincronização: ${err.message}`, "error");
+            } finally {
+                spin.classList.remove('fa-spin');
+            }
+        }
+
+        function renderApp() {
+            populateDepartmentFilter();
+            renderStats();
+            renderGrid();
+            renderTable();
+            saveToLocalStorage();
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('talent_9box_employees_v3', JSON.stringify(employees));
+            localStorage.setItem('talent_9box_sheet_id', activeSheetId);
+        }
+
+        function populateDepartmentFilter() {
+            const select = document.getElementById('deptFilter');
+            const currentVal = select.value;
+            const depts = [...new Set(employees.map(e => e.dept))].filter(Boolean).sort();
+
+            select.innerHTML = '<option value="">Todos os Departamentos</option>';
+            depts.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d;
+                opt.textContent = d;
+                if (d === currentVal) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function getFilteredEmployees() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const dept = document.getElementById('deptFilter').value;
+            const quad = document.getElementById('quadrantFilter').value;
+
+            return employees.filter(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                const matchesSearch = e.name.toLowerCase().includes(search) || e.role.toLowerCase().includes(search) || e.id.toLowerCase().includes(search);
+                const matchesDept = !dept || e.dept === dept;
+                const matchesQuad = !quad || qInfo.q.toString() === quad.toString();
+                return matchesSearch && matchesDept && matchesQuad;
+            });
+        }
+
+        function renderStats() {
+            const filtered = getFilteredEmployees();
+            document.getElementById('statTotal').textContent = filtered.length;
+
+            let stars = 0;
+            let core = 0;
+            let risk = 0;
+
+            filtered.forEach(e => {
+                const q = getQuadrantInfo(e.perf, e.pot).q;
+                if (q === 9) stars++;
+                if (q === 5 || q === 6) core++;
+                if (q === 1 || q === 7) risk++;
+            });
+
+            document.getElementById('statStars').textContent = stars;
+            document.getElementById('statCore').textContent = core;
+            document.getElementById('statRisk').textContent = risk;
+        }
+
+        function renderGrid() {
+            const filtered = getFilteredEmployees();
+
+            // Clear all boxes
+            for (let i = 1; i <= 9; i++) {
+                const boxElem = document.getElementById(`box-${i}`);
+                if (!boxElem) continue;
+                const listContainer = boxElem.querySelector('.employee-list');
+                const badge = boxElem.querySelector('.count-badge');
+                listContainer.innerHTML = '';
+                badge.textContent = '0';
+            }
+
+            // Populate boxes
+            filtered.forEach(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                const boxElem = document.getElementById(`box-${qInfo.q}`);
+                if (boxElem) {
+                    const listContainer = boxElem.querySelector('.employee-list');
+                    const badge = boxElem.querySelector('.count-badge');
+
+                    const currentCount = parseInt(badge.textContent) || 0;
+                    badge.textContent = currentCount + 1;
+
+                    const card = document.createElement('div');
+                    card.className = 'p-1.5 rounded-lg bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 flex items-center justify-between text-xs hover:border-blue-400 transition cursor-pointer group';
+                    card.onclick = (event) => {
+                        event.stopPropagation();
+                        openViewModal(e.id);
+                    };
+
+                    card.innerHTML = `
+                        <div class="truncate">
+                            <span class="font-semibold text-slate-800 dark:text-slate-200 block truncate group-hover:text-blue-600 dark:group-hover:text-blue-400">${e.name}</span>
+                            <span class="text-[10px] text-slate-400 block truncate">${e.role}</span>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition">
+                            <button onclick="event.stopPropagation(); editEmployee('${e.id}')" class="p-1 text-slate-400 hover:text-blue-600"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                        </div>
+                    `;
+                    listContainer.appendChild(card);
+                }
+            });
+        }
+
+        function renderTable() {
+            const filtered = getFilteredEmployees();
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-user-slash text-2xl mb-2 block"></i>
+                            Nenhum colaborador encontrado com os filtros aplicados.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            filtered.forEach(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-700/30 transition';
+
+                let statusBadge = 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+                if (e.status === 'Em Curso') statusBadge = 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-300';
+                if (e.status === 'Concluído') statusBadge = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300';
+                if (e.status === 'Urgente') statusBadge = 'bg-rose-100 text-rose-800 dark:bg-rose-900/60 dark:text-rose-300';
+
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                        <div class="flex flex-col">
+                            <span>${e.name}</span>
+                            <span class="text-[11px] font-normal text-slate-400">ID: ${e.id}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex flex-col">
+                            <span class="font-medium text-xs">${e.role}</span>
+                            <span class="text-[11px] text-slate-400">${e.dept}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-300">${e.perf} / 3</td>
+                    <td class="py-3 px-4 text-center font-bold text-slate-700 dark:text-slate-300">${e.pot} / 3</td>
+                    <td class="py-3 px-4">
+                        <span class="px-2.5 py-1 text-xs font-bold rounded-full text-white inline-flex items-center gap-1.5 ${qInfo.bg}">
+                            <span>${qInfo.name}</span>
+                        </span>
+                    </td>
+                    <td class="py-3 px-4 text-xs text-slate-600 dark:text-slate-300 max-w-xs truncate" title="${e.pdi || '-'}">
+                        ${e.pdi || '-'}
+                    </td>
+                    <td class="py-3 px-4">
+                        <div class="flex flex-col items-start gap-1">
+                            <span class="px-2 py-0.5 text-[10px] font-bold rounded ${statusBadge}">${e.status}</span>
+                            <span class="text-[10px] text-slate-400">${e.deadline || '-'}</span>
+                        </div>
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-1">
+                        <button onclick="openViewModal('${e.id}')" class="p-1.5 text-slate-400 hover:text-blue-600 transition" title="Ver Ficha"><i class="fa-solid fa-eye"></i></button>
+                        <button onclick="editEmployee('${e.id}')" class="p-1.5 text-slate-400 hover:text-amber-600 transition" title="Editar"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button onclick="deleteEmployee('${e.id}')" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function switchTab(tab) {
+            const gridView = document.getElementById('gridView');
+            const tableView = document.getElementById('tableView');
+            const gridBtn = document.getElementById('tabGridBtn');
+            const tableBtn = document.getElementById('tabTableBtn');
+
+            if (tab === 'grid') {
+                gridView.classList.remove('hidden');
+                tableView.classList.add('hidden');
+                gridBtn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm";
+                tableBtn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+            } else {
+                gridView.classList.add('hidden');
+                tableView.classList.remove('hidden');
+                tableBtn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm";
+                gridBtn.className = "flex-1 sm:flex-none px-4 py-1.5 rounded-md text-sm font-medium transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white";
+            }
+        }
+
+        function filterByBox(quadNumber) {
+            const quadSelect = document.getElementById('quadrantFilter');
+            quadSelect.value = quadNumber.toString();
+            renderApp();
+        }
+
+        function updateCalculatedBox() {
+            const perf = parseInt(document.getElementById('empPerformance').value);
+            const pot = parseInt(document.getElementById('empPotential').value);
+            const qInfo = getQuadrantInfo(perf, pot);
+
+            document.getElementById('calcQuadrantName').textContent = qInfo.name;
+            document.getElementById('calcQuadrantBadge').textContent = `Q${qInfo.q}`;
+            document.getElementById('calcQuadrantBadge').className = `px-3 py-1 text-xs font-bold rounded-full text-white ${qInfo.bg}`;
+
+            const pdiField = document.getElementById('empPdi');
+            if (!pdiField.value) {
+                pdiField.placeholder = `Recomendação Padrão: ${qInfo.strategy}`;
+            }
+        }
+
+        function openSheetsModal() {
+            document.getElementById('sheetIdInput').value = activeSheetId;
+            document.getElementById('sheetsModal').classList.remove('hidden');
+        }
+
+        function closeSheetsModal() {
+            document.getElementById('sheetsModal').classList.add('hidden');
+        }
+
+        function saveSheetsConfig() {
+            let input = document.getElementById('sheetIdInput').value.trim();
+            // Extract ID if full URL pasted
+            if (input.includes('/d/')) {
+                const matches = input.match(/\/d\/([a-zA-Z0-9-_]+)/);
+                if (matches && matches[1]) {
+                    input = matches[1];
+                }
+            }
+
+            if (input) {
+                activeSheetId = input;
+                closeSheetsModal();
+                syncWithGoogleSheets();
+            } else {
+                showToast("Por favor introduza um ID válido do Google Sheets.", "error");
+            }
+        }
+
+        function restoreDefaultData() {
+            employees = [...INITIAL_TEAM_RAW];
+            activeSheetId = DEFAULT_SHEET_ID;
+            closeSheetsModal();
+            renderApp();
+            showToast("Dados de exemplo restaurados com sucesso.", "info");
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = "Adicionar Colaborador";
+            document.getElementById('empForm').reset();
+            document.getElementById('empIndex').value = "-1";
+            document.getElementById('empId').value = `${Math.floor(Math.random() * 900) + 100}`;
+            updateCalculatedBox();
+            document.getElementById('employeeModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('employeeModal').classList.add('hidden');
+        }
+
+        function editEmployee(id) {
+            const idx = employees.findIndex(e => e.id.toString() === id.toString());
+            if (idx === -1) return;
+
+            const e = employees[idx];
+            document.getElementById('modalTitle').textContent = "Editar Colaborador";
+            document.getElementById('empIndex').value = idx;
+            document.getElementById('empId').value = e.id;
+            document.getElementById('empName').value = e.name;
+            document.getElementById('empRole').value = e.role;
+            document.getElementById('empDept').value = e.dept;
+            document.getElementById('empEvaluator').value = e.evaluator || '';
+            document.getElementById('empPerformance').value = e.perf;
+            document.getElementById('empPotential').value = e.pot;
+            document.getElementById('empPdi').value = e.pdi || '';
+            document.getElementById('empPdiDeadline').value = e.deadline || '';
+            document.getElementById('empPdiStatus').value = e.status || 'Em Curso';
+
+            updateCalculatedBox();
+            document.getElementById('employeeModal').classList.remove('hidden');
+        }
+
+        function saveEmployee(event) {
+            event.preventDefault();
+            const idx = parseInt(document.getElementById('empIndex').value);
+
+            const newEmp = {
+                id: document.getElementById('empId').value.trim(),
+                name: document.getElementById('empName').value.trim(),
+                role: document.getElementById('empRole').value.trim(),
+                dept: document.getElementById('empDept').value.trim(),
+                evaluator: document.getElementById('empEvaluator').value.trim(),
+                perf: parseInt(document.getElementById('empPerformance').value),
+                pot: parseInt(document.getElementById('empPotential').value),
+                pdi: document.getElementById('empPdi').value.trim(),
+                deadline: document.getElementById('empPdiDeadline').value.trim(),
+                status: document.getElementById('empPdiStatus').value
+            };
+
+            if (idx === -1) {
+                employees.push(newEmp);
+            } else {
+                employees[idx] = newEmp;
+            }
+
+            closeModal();
+            renderApp();
+            showToast("Colaborador guardado com sucesso!", "success");
+        }
+
+        function deleteEmployee(id) {
+            employees = employees.filter(e => e.id.toString() !== id.toString());
+            renderApp();
+            showToast("Colaborador removido.", "info");
+        }
+
+        function openViewModal(id) {
+            const e = employees.find(emp => emp.id.toString() === id.toString());
+            if (!e) return;
+
+            const qInfo = getQuadrantInfo(e.perf, e.pot);
+
+            document.getElementById('viewId').textContent = `ID: ${e.id}`;
+            document.getElementById('viewName').textContent = e.name;
+            document.getElementById('viewRoleDept').textContent = `${e.role} • ${e.dept}`;
+            document.getElementById('viewPerf').textContent = `${e.perf} / 3`;
+            document.getElementById('viewPot').textContent = `${e.pot} / 3`;
+
+            const quadBox = document.getElementById('viewQuadBox');
+            quadBox.className = `p-4 rounded-xl border flex justify-between items-center text-white ${qInfo.bg}`;
+            document.getElementById('viewQuadTitle').textContent = qInfo.name;
+            document.getElementById('viewQuadBadge').textContent = `Q${qInfo.q}`;
+
+            document.getElementById('viewPdiContent').innerHTML = `
+                <p class="font-medium mb-1 text-slate-900 dark:text-white">Ações PDI:</p>
+                <p class="mb-2">${e.pdi || 'Sem PDI especificado.'}</p>
+                <p class="font-medium mb-1 text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-700 pt-2">Estratégia Recomendada:</p>
+                <p class="text-xs italic text-slate-500 dark:text-slate-400">${qInfo.strategy}</p>
+            `;
+
+            document.getElementById('viewEvaluator').textContent = e.evaluator || 'Não especificado';
+            document.getElementById('viewDeadline').textContent = e.deadline || 'N/A';
+
+            document.getElementById('viewModal').classList.remove('hidden');
+        }
+
+        function closeViewModal() {
+            document.getElementById('viewModal').classList.add('hidden');
+        }
+
+        function exportToCSV() {
+            let csv = "ID,Nome,Profissao,Departamento,Avaliador,Desempenho,Potencial,Quadrante,PDI,Prazo,Status\n";
+            employees.forEach(e => {
+                const qInfo = getQuadrantInfo(e.perf, e.pot);
+                const row = [
+                    `"${e.id}"`,
+                    `"${e.name}"`,
+                    `"${e.role}"`,
+                    `"${e.dept}"`,
+                    `"${e.evaluator || ''}"`,
+                    e.perf,
+                    e.pot,
+                    `"${qInfo.name}"`,
+                    `"${(e.pdi || '').replace(/"/g, '""')}"`,
+                    `"${e.deadline || ''}"`,
+                    `"${e.status}"`
+                ];
+                csv += row.join(",") + "\n";
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Matriz_9Box_Somengil_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+        }
+
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const isDark = document.documentElement.classList.contains('dark');
+            document.getElementById('themeIcon').className = isDark ? 'fa-solid fa-sun text-amber-400' : 'fa-solid fa-moon';
+        }
+
+        // Initialize App on window load
+        window.onload = function() {
+            renderApp();
+            // Automatically attempt sync with Google Sheets on startup
+            syncWithGoogleSheets();
+        };
+    </script>
+</body>
+</html>
