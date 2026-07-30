@@ -1227,7 +1227,7 @@ function doPost(e) {
                 id: (r.id || '').toString().trim(), codigo: r.codigo || '', titulo: r.titulo || '', area: r.area || '', entidade: r.entidade || '', tipo: r.tipo || '',
                 data: (r.data || '').toString(), ano: (r.ano || '').toString(), horas: parseFloat(r.horas) || 0, custo: parseFloat(r.custo) || 0,
                 estado: r.estado || 'Planeada', evidencias: r.evidencias || '',
-                participantes: (r.participantes || '').toString().split(',').map(s => s.trim()).filter(Boolean),
+                participantes: (r.participantes || '').toString().split(/[,;]/).map(s => s.trim()).filter(Boolean),
                 // Campos extra que existem no Sheet mas que a app (ainda) não edita —
                 // mantidos para consulta no card de detalhe, sem se perderem na sincronização.
                 numAcao: (r.num_acao != null ? r.num_acao : '').toString(),
@@ -1259,6 +1259,105 @@ function doPost(e) {
             };
         }
 
+        // ---- Correção via matriz real de participantes (coluna N "Realizado?" + colunas por colaborador a partir da coluna S) ----
+        // O Apps Script deriva "estado"/"participantes" de forma pouco fiável; esta rotina lê a folha
+        // publicada diretamente e usa a matriz (fonte da verdade) para corrigir esses dois campos.
+        function normTexto(s) {
+            return (s == null ? '' : s).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
+        }
+        function tokensDe(s) {
+            return new Set(normTexto(s).split(' ').filter(Boolean));
+        }
+        function toCsvExportUrl(url) {
+            url = (url || '').trim();
+            if (!url) return '';
+            if (url.includes('pubhtml')) {
+                url = url.replace('pubhtml', 'pub').replace('gid=', 'output=csv&gid=');
+                if (!url.includes('output=csv')) url += (url.includes('?') ? '&' : '?') + 'output=csv';
+            }
+            return url;
+        }
+        // Liga cada cabeçalho de coluna (nome do colaborador na folha) ao respetivo colaborador da app
+        // por interseção de "palavras" do nome — tolera nomes abreviados na matriz (ex.: "Ana Vilaça"
+        // vs. "Ana Isabel Correia Vilaça").
+        function mapearColunasParticipantes(headerKeys) {
+            const map = {};
+            headerKeys.forEach(h => {
+                const hTokens = tokensDe(h);
+                if (!hTokens.size) return;
+                const colab = dbColaboradores.find(c => {
+                    const cTokens = tokensDe(c.nome);
+                    if (!cTokens.size) return false;
+                    for (const t of hTokens) if (!cTokens.has(t)) return false;
+                    return true;
+                });
+                if (colab) map[h] = colab.id;
+            });
+            return map;
+        }
+        function construirMapaRealizacao(rows, colColabMap) {
+            const mapa = new Map();
+            rows.forEach(row => {
+                const titulo = row['Cursos / Formações'];
+                if (!titulo) return;
+                const horas = parseHoras(row['Duração (horas)']);
+                const ano = (row['Ano'] || '').toString().trim();
+                const key = normTexto(titulo) + '|' + horas + '|' + ano;
+                const realizado = (row['Realizado?'] || '').toString().trim().toUpperCase() === 'SIM';
+                const participantes = [];
+                Object.keys(colColabMap).forEach(h => {
+                    if ((row[h] || '').toString().trim() === '1') participantes.push(colColabMap[h]);
+                });
+                if (!mapa.has(key)) mapa.set(key, []);
+                mapa.get(key).push({ realizado, participantes });
+            });
+            return mapa;
+        }
+        function aplicarRealizacaoReal(mapa) {
+            let aplicados = 0, semCorrespondencia = 0;
+            dbFormacoes.forEach(f => {
+                const key = normTexto(f.titulo) + '|' + parseHoras(f.horas) + '|' + String(f.ano || '').trim();
+                const candidatos = mapa.get(key);
+                if (!candidatos || !candidatos.length) { semCorrespondencia++; return; }
+                const { realizado, participantes } = candidatos[0];
+                f.participantes = participantes;
+                if (realizado) f.estado = 'Concluída';
+                else if (isConcluida(f.estado)) f.estado = 'Planeada';
+                aplicados++;
+            });
+            console.log(`[TMS] Participantes/estado corrigidos a partir da matriz real (coluna N + colunas por colaborador): ${aplicados} formações | sem correspondência: ${semCorrespondencia}`);
+        }
+        function sincronizarParticipantesReais() {
+            return new Promise((resolve) => {
+                const url = toCsvExportUrl(document.getElementById('sheetUrlInput')?.value);
+                if (!url || !dbFormacoes.length) { resolve(false); return; }
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        try {
+                            const rows = results.data || [];
+                            if (!rows.length) { resolve(false); return; }
+                            const colColabMap = mapearColunasParticipantes(Object.keys(rows[0]));
+                            const mapa = construirMapaRealizacao(rows, colColabMap);
+                            aplicarRealizacaoReal(mapa);
+                            saveToStorage();
+                            renderAll();
+                            resolve(true);
+                        } catch (err) {
+                            console.error('[TMS] Falha ao aplicar matriz de participantes reais:', err);
+                            resolve(false);
+                        }
+                    },
+                    error: function(err) {
+                        console.error('[TMS] Falha ao obter CSV da matriz de participantes:', err);
+                        resolve(false);
+                    }
+                });
+            });
+        }
+
         // ---- Sincronização ----
         async function syncFromServer() {
             if (!TMS_CONFIG.webAppUrl) { showToast('Configure primeiro o URL do Web App.', 'warning'); return; }
@@ -1272,6 +1371,7 @@ function doPost(e) {
                 renderAll();
                 updateSheetBadge('ok');
                 showToast('Dados sincronizados com o Google Sheet.', 'success');
+                await sincronizarParticipantesReais();
             } catch (err) {
                 updateSheetBadge('error');
                 showToast('Não foi possível sincronizar: ' + err.message, 'error');
@@ -1421,10 +1521,10 @@ function doPost(e) {
             return m ? m[0] : '';
         }
 
-        // Participantes normalizados de uma formação (aceita array ou texto "C1,C2")
+        // Participantes normalizados de uma formação (aceita array ou texto "C1,C2" ou "C1;C2")
         function participantesDe(f) {
             let raw = f.participantes;
-            if (!Array.isArray(raw)) raw = (raw == null ? '' : raw).toString().split(',');
+            if (!Array.isArray(raw)) raw = (raw == null ? '' : raw).toString().split(/[,;]/);
             return raw.map(normId).filter(Boolean);
         }
 
