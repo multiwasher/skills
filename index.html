@@ -132,6 +132,11 @@
                         <i class="fa-brands fa-google-drive"></i>
                     </a>
 
+                    <!-- Formulário de Ações Formativas -->
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfad6fvs2z5pvOu_6TDrTnskBusXbo9DT8Lk-KGTygl9hc7Nw/viewform" target="_blank" rel="noopener noreferrer" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Preencher formulário de ações formativas">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                    </a>
+
                     <!-- Export Quick Button -->
                     <button onclick="window.print()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition" title="Imprimir / Exportar PDF">
                         <i class="fa-solid fa-print"></i>
@@ -151,6 +156,9 @@
                 </button>
                 <button onclick="switchTab('formacoes')" id="tab-formacoes" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-book-open"></i> Plano de Formação
+                </button>
+                <button onclick="switchTab('respostas-formativas')" id="tab-respostas-formativas" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-inbox"></i> Respostas do Formulário
                 </button>
                 <button onclick="switchTab('iso-audit')" id="tab-iso-audit" class="tab-btn px-4 py-3 font-medium text-slate-400 hover:text-white transition flex items-center gap-2 whitespace-nowrap">
                     <i class="fa-solid fa-clipboard-check"></i> Eficácia & Auditoria ISO 9001
@@ -426,6 +434,54 @@
                         <tbody id="formacoesTableBody" class="divide-y divide-slate-100 text-xs">
                             <!-- Injected dynamically -->
                         </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB: RESPOSTAS DO FORMULÁRIO DE AÇÕES FORMATIVAS -->
+        <section id="sec-respostas-formativas" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-800">Respostas — Ações Formativas</h1>
+                    <p class="text-sm text-slate-500">Consulte e filtre as respostas registadas no formulário de ações formativas.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <a href="https://docs.google.com/forms/d/e/1FAIpQLSfad6fvs2z5pvOu_6TDrTnskBusXbo9DT8Lk-KGTygl9hc7Nw/viewform" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Preencher formulário
+                    </a>
+                    <button id="btnAtualizarRespostasFormativas" onclick="carregarRespostasFormativas(true)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                        <i class="fa-solid fa-rotate"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div>
+                        <label for="respostasDataInicio" class="block text-xs font-semibold text-slate-700 mb-1">Data desde</label>
+                        <input type="date" id="respostasDataInicio" onchange="renderRespostasFormativas()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label for="respostasDataFim" class="block text-xs font-semibold text-slate-700 mb-1">Data até</label>
+                        <input type="date" id="respostasDataFim" onchange="renderRespostasFormativas()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                    <div>
+                        <label for="respostasKeyword" class="block text-xs font-semibold text-slate-700 mb-1">Keyword de formação</label>
+                        <input type="search" id="respostasKeyword" oninput="renderRespostasFormativas()" placeholder="Pesquisar formação, curso ou ação..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-brand-500">
+                    </div>
+                </div>
+                <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <p id="respostasFormativasStatus" role="status" class="text-slate-500">As respostas serão carregadas ao abrir esta secção.</p>
+                    <p id="respostasFormativasCount" class="font-semibold text-slate-700"></p>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table id="respostasFormativasTable" class="w-full text-left border-collapse">
+                        <thead></thead>
+                        <tbody class="divide-y divide-slate-100 text-xs"></tbody>
                     </table>
                 </div>
             </div>
@@ -1034,6 +1090,11 @@ function doPost(e) {
         let chartTendencia = null;
         let chartArea = null;
         let chartDepto = null;
+        let respostasFormativas = [];
+        let cabecalhosRespostasFormativas = [];
+        let respostasFormativasCarregadas = false;
+        let respostasFormativasEmCarregamento = false;
+        const URL_RESPOSTAS_FORMATIVAS = 'https://docs.google.com/spreadsheets/d/1lQR_SWvE3YXVtz2OGxt4_DRIksUl43VxKAsKgPuXFXo/gviz/tq?tqx=out:csv';
 
         // ================= FILTRO GLOBAL DE ANO(S) =================
         function getAnosDisponiveis() {
@@ -1265,6 +1326,157 @@ function doPost(e) {
         function normTexto(s) {
             return (s == null ? '' : s).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim().replace(/\s+/g, ' ');
         }
+
+        function carregarRespostasFormativas(forcar = false) {
+            if (respostasFormativasEmCarregamento || (respostasFormativasCarregadas && !forcar)) return;
+
+            respostasFormativasEmCarregamento = true;
+            document.getElementById('respostasFormativasStatus').textContent = 'A carregar respostas do Google Sheets...';
+            document.getElementById('btnAtualizarRespostasFormativas').disabled = true;
+
+            Papa.parse(URL_RESPOSTAS_FORMATIVAS, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    respostasFormativasEmCarregamento = false;
+                    document.getElementById('btnAtualizarRespostasFormativas').disabled = false;
+
+                    if (results.errors && results.errors.length) {
+                        document.getElementById('respostasFormativasStatus').textContent = 'Não foi possível interpretar as respostas da folha.';
+                        console.error('[TMS] Erros ao interpretar respostas das ações formativas:', results.errors);
+                        showToast('Erro ao interpretar as respostas do formulário.', 'error');
+                        return;
+                    }
+
+                    const fields = results.meta && results.meta.fields ? results.meta.fields.filter(Boolean) : [];
+                    const rows = (results.data || []).filter(row =>
+                        fields.some(field => (row[field] || '').toString().trim() !== '')
+                    );
+                    if (!fields.length || !rows.length) {
+                        respostasFormativas = [];
+                        cabecalhosRespostasFormativas = fields;
+                        respostasFormativasCarregadas = false;
+                        document.getElementById('respostasFormativasStatus').textContent =
+                            'Não foram encontradas respostas. Confirme se a folha tem dados e está partilhada para leitura.';
+                        renderRespostasFormativas();
+                        return;
+                    }
+
+                    cabecalhosRespostasFormativas = fields;
+                    respostasFormativas = rows;
+                    respostasFormativasCarregadas = true;
+                    renderRespostasFormativas();
+                },
+                error: function(err) {
+                    respostasFormativasEmCarregamento = false;
+                    document.getElementById('btnAtualizarRespostasFormativas').disabled = false;
+                    document.getElementById('respostasFormativasStatus').textContent =
+                        'Não foi possível aceder à folha. Confirme se está partilhada com acesso de leitor.';
+                    console.error('[TMS] Falha ao carregar respostas das ações formativas:', err);
+                    showToast('Erro ao aceder às respostas. Confirme a partilha da folha com acesso de leitor.', 'error');
+                }
+            });
+        }
+
+        function dataRespostaISO(valor) {
+            const texto = (valor || '').toString().trim();
+            let match = texto.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+            if (match) return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+
+            match = texto.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{2,4})/);
+            if (match) {
+                const ano = match[3].length === 2 ? `20${match[3]}` : match[3];
+                const mes = Number(match[2]);
+                const dia = Number(match[1]);
+                const data = new Date(Number(ano), mes - 1, dia);
+                if (data.getFullYear() !== Number(ano) || data.getMonth() !== mes - 1 || data.getDate() !== dia) return '';
+                return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+            }
+
+            const data = new Date(texto);
+            if (Number.isNaN(data.getTime())) return '';
+            return `${data.getFullYear()}-${String(data.getMonth() + 1).padStart(2, '0')}-${String(data.getDate()).padStart(2, '0')}`;
+        }
+
+        function renderRespostasFormativas() {
+            const table = document.getElementById('respostasFormativasTable');
+            if (!table) return;
+
+            const header = table.querySelector('thead');
+            const body = table.querySelector('tbody');
+            const dataColumn = cabecalhosRespostasFormativas.find(col => /carimbo|timestamp|submitted|submission|envio/.test(normTexto(col)))
+                || cabecalhosRespostasFormativas.find(col => normTexto(col).includes('data'));
+            const trainingColumns = cabecalhosRespostasFormativas.filter(col =>
+                /formacao|curso|acao|tema|training|capacitacao/.test(normTexto(col))
+            );
+            const searchColumns = trainingColumns.length
+                ? trainingColumns
+                : cabecalhosRespostasFormativas.filter(col => col !== dataColumn);
+            const inicio = document.getElementById('respostasDataInicio').value;
+            const fim = document.getElementById('respostasDataFim').value;
+            const keyword = normTexto(document.getElementById('respostasKeyword').value);
+
+            document.getElementById('respostasDataInicio').disabled = !dataColumn;
+            document.getElementById('respostasDataFim').disabled = !dataColumn;
+
+            const filtradas = respostasFormativas.filter(row => {
+                const data = dataColumn ? dataRespostaISO(row[dataColumn]) : '';
+                if (inicio && (!data || data < inicio)) return false;
+                if (fim && (!data || data > fim)) return false;
+                if (keyword && !searchColumns.some(col => normTexto(row[col]).includes(keyword))) return false;
+                return true;
+            });
+
+            header.replaceChildren();
+            body.replaceChildren();
+            if (cabecalhosRespostasFormativas.length) {
+                const headerRow = document.createElement('tr');
+                headerRow.className = 'bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider';
+                cabecalhosRespostasFormativas.forEach(col => {
+                    const cell = document.createElement('th');
+                    cell.className = 'py-3 px-4 whitespace-nowrap';
+                    cell.textContent = col;
+                    headerRow.appendChild(cell);
+                });
+                header.appendChild(headerRow);
+            }
+
+            if (!filtradas.length) {
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = Math.max(cabecalhosRespostasFormativas.length, 1);
+                cell.className = 'text-center py-8 text-slate-400';
+                cell.textContent = respostasFormativas.length
+                    ? 'Nenhuma resposta corresponde aos filtros selecionados.'
+                    : 'Sem respostas para apresentar.';
+                row.appendChild(cell);
+                body.appendChild(row);
+            } else {
+                filtradas.forEach(response => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-slate-50';
+                    cabecalhosRespostasFormativas.forEach(col => {
+                        const cell = document.createElement('td');
+                        cell.className = 'py-3 px-4 text-slate-700 align-top';
+                        cell.textContent = (response[col] || '').toString();
+                        row.appendChild(cell);
+                    });
+                    body.appendChild(row);
+                });
+            }
+
+            document.getElementById('respostasFormativasCount').textContent =
+                `${filtradas.length} de ${respostasFormativas.length} respostas`;
+            if (respostasFormativasCarregadas) {
+                const avisos = [];
+                if (!dataColumn) avisos.push('Não foi identificada uma coluna de data; filtros por data indisponíveis.');
+                if (!trainingColumns.length) avisos.push('A pesquisa por keyword considera todas as respostas.');
+                document.getElementById('respostasFormativasStatus').textContent =
+                    ['Respostas carregadas do Google Sheets.', ...avisos].join(' ');
+            }
+        }
+
         function tokensDe(s) {
             return new Set(normTexto(s).split(' ').filter(Boolean));
         }
@@ -1470,6 +1682,9 @@ function doPost(e) {
             // Re-render charts when entering dashboard
             if (tabId === 'dashboard') {
                 setTimeout(() => { renderDashboardCharts(); }, 50);
+            }
+            if (tabId === 'respostas-formativas') {
+                carregarRespostasFormativas();
             }
         }
 
