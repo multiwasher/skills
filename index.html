@@ -1342,13 +1342,6 @@ function doPost(e) {
                     respostasFormativasEmCarregamento = false;
                     document.getElementById('btnAtualizarRespostasFormativas').disabled = false;
 
-                    if (results.errors && results.errors.length) {
-                        document.getElementById('respostasFormativasStatus').textContent = 'Não foi possível interpretar as respostas da folha.';
-                        console.error('[TMS] Erros ao interpretar respostas das ações formativas:', results.errors);
-                        showToast('Erro ao interpretar as respostas do formulário.', 'error');
-                        return;
-                    }
-
                     const fields = results.meta && results.meta.fields ? results.meta.fields.filter(Boolean) : [];
                     const rows = (results.data || []).filter(row =>
                         fields.some(field => (row[field] || '').toString().trim() !== '')
@@ -1367,6 +1360,12 @@ function doPost(e) {
                     respostasFormativas = rows;
                     respostasFormativasCarregadas = true;
                     renderRespostasFormativas();
+                    if (results.errors && results.errors.length) {
+                        document.getElementById('respostasFormativasStatus').textContent =
+                            `${rows.length} respostas carregadas com ${results.errors.length} avisos de formatação CSV; algumas células podem estar incompletas.`;
+                        console.warn('[TMS] Respostas das ações formativas recuperadas com avisos CSV:', results.errors);
+                        showToast('Respostas carregadas, mas alguns valores podem estar incompletos.', 'warning');
+                    }
                 },
                 error: function(err) {
                     respostasFormativasEmCarregamento = false;
